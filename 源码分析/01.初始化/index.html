@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-22 17:16:53
  * @LastEditors: lizi
- * @LastEditTime: 2022-04-24 15:46:25
+ * @LastEditTime: 2022-04-24 18:13:31
  * @FilePath: \ylk-vue\源码分析\01.初始化\index.html
 -->
 <!DOCTYPE html>
@@ -17,6 +17,7 @@
   <body>
     <div id="app">
       {{msg}}
+      <a @click="click">改变</a>
       <test></test>
     </div>
   </body>
@@ -48,6 +49,11 @@
       mounted() {
         console.log("parent mounted");
       },
+      methods:{
+        click(){
+          this.msg = '嘿嘿嘿'
+        }
+      }
     });
   </script>
 </html>
