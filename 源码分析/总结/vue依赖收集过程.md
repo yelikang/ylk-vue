@@ -1,0 +1,4 @@
+### vue对依赖进行收集的过程
+* 组件在进行mountComponents时，会通过创建Watcher对象去执行updateComponent方法、_render方法、_update方法；在_render方法时会调用每个组件的render方法(要么通过vue-loader编译、要么通过vue源码实时compiler成对应的render方法)
+* 执行render方法时会如果读取data中的某个属性(例如this.msg)，会调用proxy代理中的sharedPropertyDefinition.get方法(该方法主要代理this._data.msg与this.msg之间的关系)
+* 调用proxy中的sharedPropertyDefinition.get方法就会执行defineReactive中对data属性劫持的get方法(sharedPropertyDefinition.get虽然读取的是vm._data属性，但是defineReactive中的data与vm.data指向的是同一个对象)，从而进行依赖收集

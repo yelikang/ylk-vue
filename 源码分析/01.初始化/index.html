@@ -3,48 +3,51 @@
  * @Autor: lizi
  * @Date: 2022-04-22 17:16:53
  * @LastEditors: lizi
- * @LastEditTime: 2022-04-24 14:15:31
+ * @LastEditTime: 2022-04-24 15:46:25
  * @FilePath: \ylk-vue\源码分析\01.初始化\index.html
 -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>初始化</title>
-</head>
-<body>
+  </head>
+  <body>
     <div id="app">
-        {{msg}}
-        <test></test>
+      {{msg}}
+      <test></test>
     </div>
-    
-</body>
-<script src="../../dist/vue.js"></script>
-<script>
-
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
     new Vue({
-        el:'#app',
-        components:{
-            test:{
-                template:'<div>子组件</div>',
-                data(){
-                    return {
-                        name:'Tomi'
-                    }
-                }
-            }
-        },
-        data(){
+      el: "#app",
+      components: {
+        test: {
+          template: "<div>子组件</div>",
+          data() {
             return {
-                msg:'哈哈哈'
-            }
+              name: "Tomi",
+            };
+          },
+          mounted() {
+            console.log("children mounted");
+          },
         },
-        beforeCreate(){
-            console.log(6)
-        }
-    })
-
-</script>
+      },
+      data() {
+        return {
+          msg: "哈哈哈",
+        };
+      },
+      beforeCreate() {
+        console.log(6);
+      },
+      mounted() {
+        console.log("parent mounted");
+      },
+    });
+  </script>
 </html>
