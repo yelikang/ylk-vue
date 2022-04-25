@@ -183,6 +183,7 @@ export function createComponent (
   }
 
   // install component management hooks onto the placeholder node
+  // 组件vnode注入init、prepatch、insert、destroy等钩子函数
   installComponentHooks(data)
 
   // return a placeholder vnode
