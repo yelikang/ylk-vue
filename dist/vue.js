@@ -2944,6 +2944,8 @@
     var options = vm.$options;
 
     // locate first non-abstract parent
+    // 建立父子关系，这里的options.parent实际上是全局的activeInstance，在createComponentInstanceForVnode时赋值给了options.parent
+    // 这里指定$parent，代码可以通过$parent获取父级组件
     var parent = options.parent;
     if (parent && !options.abstract) {
       while (parent.$options.abstract && parent.$parent) {
@@ -3401,11 +3403,13 @@
    * Add a dependency to this directive.
    */
   Watcher.prototype.addDep = function addDep (dep) {
+    // 记录watcher(一个component对应一个watcher)中依赖哪些属性/变量
     var id = dep.id;
     if (!this.newDepIds.has(id)) {
       this.newDepIds.add(id);
       this.newDeps.push(dep);
       if (!this.depIds.has(id)) {
+        // dep中记录属性会影响哪些组件变更，当属性更新时会调用Dep的notify方法通知watcher更新
         dep.addSub(this);
       }
     }
@@ -4687,10 +4691,12 @@
         var mountedNode = vnode; // work around flow
         componentVNodeHooks$1.prepatch(mountedNode, mountedNode);
       } else {
+        // 创建组件实例(会调用_init方法)
         var child = vnode.componentInstance = createComponentInstanceForVnode$1(
           vnode,
           activeInstance
         );
+        // 组件挂载
         child.$mount(hydrating ? vnode.elm : undefined, hydrating);
       }
     },
@@ -4753,10 +4759,20 @@
       return
     }
 
+    // 在initGlobalApi方法时，将Vue.options._base = Vue
+    // 而_init时，又进行了mergeOptions
+    // vm.$options = mergeOptions(
+    //   resolveConstructorOptions(vm.constructor),
+    //      options || {},
+    //      vm
+    //  )
+    // 将vm.constructor(指Vue)上的options都合并到了vm.$options上，所以上面会有vm.$options._base(即Vue)；所以这里的baseCtor.extend即Vue.extend
+
     var baseCtor = context.$options._base;
 
     // plain options object: turn it into a constructor
     if (isObject(Ctor)) {
+      // 调用Vue.extend方法
       Ctor = baseCtor.extend(Ctor);
     }
 
@@ -4832,6 +4848,7 @@
 
     // return a placeholder vnode
     var name = Ctor.options.name || tag;
+    // 组件vnode没有children vnode,只有组件在调用自己的render时才会创建自己的children vnode
     var vnode = new VNode(
       ("vue-component-" + (Ctor.cid) + (name ? ("-" + name) : '')),
       data, undefined, undefined, undefined, context,
@@ -4847,6 +4864,7 @@
     parent // activeInstance in lifecycle state
   ) {
     var options = {
+      // 调用Vue.prototype._init方法时会判断options._isComponent
       _isComponent: true,
       _parentVnode: vnode,
       parent: parent
@@ -4857,6 +4875,7 @@
       options.render = inlineTemplate.render;
       options.staticRenderFns = inlineTemplate.staticRenderFns;
     }
+    // 构造一个Component实例,这了实际调用_init,将_init作为构造函数new 一个Component实例
     return new vnode.componentOptions.Ctor(options)
   }
 
@@ -5334,9 +5353,11 @@
         validateComponentName(name);
       }
 
+      // 子构造函数
       var Sub = function VueComponent (options) {
         this._init(options);
       };
+      // 子构造函数原型链指向父类
       Sub.prototype = Object.create(Super.prototype);
       Sub.prototype.constructor = Sub;
       Sub.cid = cid++;
@@ -6456,6 +6477,7 @@
       }
 
       vnode.isRootInsert = !nested; // for transition enter check
+      // 组件节点，将组件创建为真实dom
       if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
         return
       }
@@ -6478,6 +6500,7 @@
           }
         }
 
+        // 创建原生dom，并赋值给vnode的elm对象
         vnode.elm = vnode.ns
           ? nodeOps.createElementNS(vnode.ns, tag)
           : nodeOps.createElement(tag, vnode);
@@ -6485,10 +6508,12 @@
 
         /* istanbul ignore if */
         {
+          // 创建子节点(createChildren会递归调用createElm)
           createChildren(vnode, children, insertedVnodeQueue);
           if (isDef(data)) {
             invokeCreateHooks(vnode, insertedVnodeQueue);
           }
+          // 插入
           insert(parentElm, vnode.elm, refElm);
         }
 
@@ -6504,10 +6529,12 @@
       }
     }
 
+    // 这里是将组件生成真实dom,create-component中的createComponent则用于生成vnode(其中会进行installComponentHooks，给vnode绑定这里的init钩子函数)
     function createComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
       var i = vnode.data;
       if (isDef(i)) {
         var isReactivated = isDef(vnode.componentInstance) && i.keepAlive;
+        // 判断是否注入了hook、init钩子函数，如果注入了，就代表是组件；从而去调用init方法
         if (isDef(i = i.hook) && isDef(i = i.init)) {
           i(vnode, false /* hydrating */);
         }
@@ -7009,6 +7036,7 @@
         createElm(vnode, insertedVnodeQueue);
       } else {
         var isRealElement = isDef(oldVnode.nodeType);
+        // diff算法vnode虚拟dom对比更新
         if (!isRealElement && sameVnode(oldVnode, vnode)) {
           // patch existing root node
           patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly);
@@ -7037,14 +7065,18 @@
             }
             // either not server-rendered, or hydration failed.
             // create an empty node and replace it
+            // 将真实的dom转换成vnode
             oldVnode = emptyNodeAt(oldVnode);
           }
 
           // replacing existing element
+          // vnode上挂载的elm指向的就是真实的dom
           var oldElm = oldVnode.elm;
+          // 真实的父级dom
           var parentElm = nodeOps.parentNode(oldElm);
 
           // create new node
+          // vnode挂载到真实的dom上
           createElm(
             vnode,
             insertedVnodeQueue,
@@ -8721,6 +8753,9 @@
   // built-in modules have been applied.
   var modules = platformModules.concat(baseModules);
 
+  // 这里用到了函数柯里化的概念(将接收多个参数的函数，变换成接受单一参数的函数)，
+  // 例如这里如果不通过这种方式，按正常的逻辑，每个调用patch方法的地方都要手动传入nodeOps、modules、其它业务参数
+  // 而这里柯里化之后(实际就是闭包的技巧)，就不用每次都传入相同的参数(或者是与weex差异化的参数)
   var patch = createPatchFunction({ nodeOps: nodeOps, modules: modules });
 
   /**

@@ -141,6 +141,7 @@ export function createPatchFunction (backend) {
     }
 
     vnode.isRootInsert = !nested // for transition enter check
+    // 组件节点，将组件创建为真实dom
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
       return
     }
@@ -163,6 +164,7 @@ export function createPatchFunction (backend) {
         }
       }
 
+      // 创建原生dom，并赋值给vnode的elm对象
       vnode.elm = vnode.ns
         ? nodeOps.createElementNS(vnode.ns, tag)
         : nodeOps.createElement(tag, vnode)
@@ -188,10 +190,12 @@ export function createPatchFunction (backend) {
           insert(parentElm, vnode.elm, refElm)
         }
       } else {
+        // 创建子节点(createChildren会递归调用createElm)
         createChildren(vnode, children, insertedVnodeQueue)
         if (isDef(data)) {
           invokeCreateHooks(vnode, insertedVnodeQueue)
         }
+        // 插入
         insert(parentElm, vnode.elm, refElm)
       }
 
@@ -207,10 +211,12 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // 这里是将组件生成真实dom,create-component中的createComponent则用于生成vnode(其中会进行installComponentHooks，给vnode绑定这里的init钩子函数)
   function createComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
     let i = vnode.data
     if (isDef(i)) {
       const isReactivated = isDef(vnode.componentInstance) && i.keepAlive
+      // 判断是否注入了hook、init钩子函数，如果注入了，就代表是组件；从而去调用init方法
       if (isDef(i = i.hook) && isDef(i = i.init)) {
         i(vnode, false /* hydrating */)
       }
@@ -712,6 +718,7 @@ export function createPatchFunction (backend) {
       createElm(vnode, insertedVnodeQueue)
     } else {
       const isRealElement = isDef(oldVnode.nodeType)
+      // diff算法vnode虚拟dom对比更新
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
         // patch existing root node
         patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)
@@ -740,14 +747,18 @@ export function createPatchFunction (backend) {
           }
           // either not server-rendered, or hydration failed.
           // create an empty node and replace it
+          // 将真实的dom转换成vnode
           oldVnode = emptyNodeAt(oldVnode)
         }
 
         // replacing existing element
+        // vnode上挂载的elm指向的就是真实的dom
         const oldElm = oldVnode.elm
+        // 真实的父级dom
         const parentElm = nodeOps.parentNode(oldElm)
 
         // create new node
+        // vnode挂载到真实的dom上
         createElm(
           vnode,
           insertedVnodeQueue,

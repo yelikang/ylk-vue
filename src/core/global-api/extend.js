@@ -30,9 +30,11 @@ export function initExtend (Vue: GlobalAPI) {
       validateComponentName(name)
     }
 
+    // 子构造函数
     const Sub = function VueComponent (options) {
       this._init(options)
     }
+    // 子构造函数原型链指向父类
     Sub.prototype = Object.create(Super.prototype)
     Sub.prototype.constructor = Sub
     Sub.cid = cid++

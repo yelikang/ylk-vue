@@ -1,0 +1,43 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-04-26 17:10:41
+ * @FilePath: \ylk-vue\源码分析\02.组件化createElement\index.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>组件化</title>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    const test = {
+      template: "<div>子组件</div>",
+      
+    };
+
+    new Vue({
+      el: "#app",
+      data(){
+        return {
+          name:'Tomi'
+        }
+      },
+      render(h) {
+        return h('div',[
+          h(test),
+          h('span', this.name),
+          h('span', this.name)
+        ]);
+      },
+    });
+  </script>
+</html>

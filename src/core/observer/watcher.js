@@ -126,11 +126,13 @@ export default class Watcher {
    * Add a dependency to this directive.
    */
   addDep (dep: Dep) {
+    // 记录watcher(一个component对应一个watcher)中依赖哪些属性/变量
     const id = dep.id
     if (!this.newDepIds.has(id)) {
       this.newDepIds.add(id)
       this.newDeps.push(dep)
       if (!this.depIds.has(id)) {
+        // dep中记录属性会影响哪些组件变更，当属性更新时会调用Dep的notify方法通知watcher更新
         dep.addSub(this)
       }
     }

@@ -44,10 +44,12 @@ const componentVNodeHooks = {
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
     } else {
+      // 创建组件实例(会调用_init方法)
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
         activeInstance
       )
+      // 组件挂载
       child.$mount(hydrating ? vnode.elm : undefined, hydrating)
     }
   },
@@ -109,10 +111,20 @@ export function createComponent (
     return
   }
 
+  // 在initGlobalApi方法时，将Vue.options._base = Vue
+  // 而_init时，又进行了mergeOptions
+  // vm.$options = mergeOptions(
+  //   resolveConstructorOptions(vm.constructor),
+  //      options || {},
+  //      vm
+  //  )
+  // 将vm.constructor(指Vue)上的options都合并到了vm.$options上，所以上面会有vm.$options._base(即Vue)；所以这里的baseCtor.extend即Vue.extend
+
   const baseCtor = context.$options._base
 
   // plain options object: turn it into a constructor
   if (isObject(Ctor)) {
+    // 调用Vue.extend方法
     Ctor = baseCtor.extend(Ctor)
   }
 
@@ -188,6 +200,7 @@ export function createComponent (
 
   // return a placeholder vnode
   const name = Ctor.options.name || tag
+  // 组件vnode没有children vnode,只有组件在调用自己的render时才会创建自己的children vnode
   const vnode = new VNode(
     `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
     data, undefined, undefined, undefined, context,
@@ -211,6 +224,7 @@ export function createComponentInstanceForVnode (
   parent: any, // activeInstance in lifecycle state
 ): Component {
   const options: InternalComponentOptions = {
+    // 调用Vue.prototype._init方法时会判断options._isComponent
     _isComponent: true,
     _parentVnode: vnode,
     parent
@@ -221,6 +235,7 @@ export function createComponentInstanceForVnode (
     options.render = inlineTemplate.render
     options.staticRenderFns = inlineTemplate.staticRenderFns
   }
+  // 构造一个Component实例,这了实际调用_init,将_init作为构造函数new 一个Component实例
   return new vnode.componentOptions.Ctor(options)
 }
 

@@ -1,0 +1,34 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-04-26 17:13:45
+ * @FilePath: \ylk-vue\源码分析\03.Dep消息中心搜集watcher过程\index.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>03.Dep消息中心搜集watcher过程</title>
+  </head>
+  <body>
+    <div id="app">
+      {{name}}
+      {{name}}
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data(){
+        return {
+          name:'Tomi'
+        }
+      }
+    });
+  </script>
+</html>

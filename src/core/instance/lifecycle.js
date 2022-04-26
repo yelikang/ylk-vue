@@ -33,6 +33,8 @@ export function initLifecycle (vm: Component) {
   const options = vm.$options
 
   // locate first non-abstract parent
+  // 建立父子关系，这里的options.parent实际上是全局的activeInstance，在createComponentInstanceForVnode时赋值给了options.parent
+  // 这里指定$parent，代码可以通过$parent获取父级组件
   let parent = options.parent
   if (parent && !options.abstract) {
     while (parent.$options.abstract && parent.$parent) {
