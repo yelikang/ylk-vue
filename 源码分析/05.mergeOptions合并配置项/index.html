@@ -1,0 +1,91 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-05 15:58:05
+ * @FilePath: \ylk-vue\源码分析\05.mergeOptions合并配置项\index.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>05.mergeOptions合并配置项</title>
+  </head>
+  <body>
+    <div id="app">
+      
+      {{name}}
+      <children />
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+
+    const grandChildren = {
+      data(){
+        return {
+          grandChildren:'我是孙子'
+        }
+      },
+      props:{
+        parentName:{
+          type:String
+        }
+      },
+      template:`<div>{{grandChildren}}</div>`,
+      created(){
+        console.log('孙子配置项:',this.$options)
+      },
+      mounted(){
+        console.log(this)
+      }
+    }
+      
+    const children = {
+      data(){
+        return {
+          son:'我是儿子'
+        }
+      },
+      components:{
+        grandChildren
+      },
+      template:`<div>{{son}} <grandChildren :parentName="son"/> <global-component/></div>`,
+      created(){
+        console.log('子类配置项:',this.$options)
+      }
+    }
+
+    // 混入全局钩子，看配置项合并
+    Vue.mixin({
+      created(){
+        console.log('mixin created')
+      }
+    })
+
+    // 全局组件
+    Vue.component('global-component',{
+      template:`<div>全局组件</div>`
+    })
+
+    new Vue({
+      el: "#app",
+      data(){
+        return {
+          name:'我是父亲'
+        }
+      },
+      components:{
+        children
+      },
+      created(){
+        console.log('父类配置项:',this.$options)
+      }
+    });
+
+    
+  </script>
+</html>

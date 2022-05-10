@@ -1758,6 +1758,7 @@
 
   /**
    * Hooks and props are merged as arrays.
+   * 合并多个钩子函数，成为一个包含多个钩子函数的数组
    */
   function mergeHook (
     parentVal,
@@ -1786,6 +1787,7 @@
   }
 
   LIFECYCLE_HOOKS.forEach(function (hook) {
+    // 对于生命周期钩子函数的合并，会返回一个数组；所以组件多个相同的钩子函数会依次进行
     strats[hook] = mergeHook;
   });
 
@@ -2035,14 +2037,17 @@
 
     var options = {};
     var key;
+    // 先将父级的所有属性合并到子级的options上
     for (key in parent) {
       mergeField(key);
     }
+    // 如果子级的某个属性父级没有，就赋值该属性给自己的options
     for (key in child) {
       if (!hasOwn(parent, key)) {
         mergeField(key);
       }
     }
+    // 合并某个属性
     function mergeField (key) {
       var strat = strats[key] || defaultStrat;
       options[key] = strat(parent[key], child[key], vm, key);
@@ -3220,6 +3225,7 @@
     for (index = 0; index < queue.length; index++) {
       watcher = queue[index];
       if (watcher.before) {
+        // 执行beforeUpdate钩子函数
         watcher.before();
       }
       id = watcher.id;
@@ -3250,6 +3256,7 @@
 
     // call component updated and activated hooks
     callActivatedHooks(activatedQueue);
+    // // 执行updated钩子函数
     callUpdatedHooks(updatedQueue);
 
     // devtool hook
@@ -3261,6 +3268,8 @@
 
   function callUpdatedHooks (queue) {
     var i = queue.length;
+    // 倒序执行组件的updated钩子
+    // (所以组件更新: 父beforeUpdate -> 子beforeUpdate -> 孙beforeUpdate -> 孙updated -> 子updated -> 父updated)
     while (i--) {
       var watcher = queue[i];
       var vm = watcher.vm;
@@ -3505,6 +3514,7 @@
    * Remove self from all dependencies' subscriber list.
    */
   Watcher.prototype.teardown = function teardown () {
+    // 卸载watcher
     if (this.active) {
       // remove self from vm's watcher list
       // this is a somewhat expensive operation so we skip it
@@ -4691,9 +4701,11 @@
         var mountedNode = vnode; // work around flow
         componentVNodeHooks$1.prepatch(mountedNode, mountedNode);
       } else {
-        // 创建组件实例(会调用_init方法)
+        // 创建vm组件实例(会调用_init方法)
         var child = vnode.componentInstance = createComponentInstanceForVnode$1(
           vnode,
+          // 这里的activeInstance其实是父级vm实例(父组件在调用_update时会调用setActiveInstance赋值activeInstance为当前组件vm)
+          // 这样在子组件创建过程中就能够通过activeInstance获取父级vm实例
           activeInstance
         );
         // 组件挂载
@@ -4866,7 +4878,9 @@
     var options = {
       // 调用Vue.prototype._init方法时会判断options._isComponent
       _isComponent: true,
+      // 组件占位vnode
       _parentVnode: vnode,
+      // activeInstance
       parent: parent
     };
     // check inline-template render functions
@@ -5121,6 +5135,8 @@
 
       // set parent vnode. this allows render functions to have access
       // to the data on the placeholder node.
+      // 占位vnode: 父级占位$vnode(例如创建的 vue-component-1-children 占位$vnode;可以理解为某个子组件未解析时的vnode)
+      // 渲染vnode: 这里的vnode则是将子组件实际解析生成的vnode,可以理解为某个子组件解析内容后的vnode
       vm.$vnode = _parentVnode;
       // render self
       var vnode;
@@ -5158,6 +5174,7 @@
         vnode = createEmptyVNode();
       }
       // set parent
+      // 组件实际解析出来的vnode，利用parent指向未解析前的组件占位$vnode(即这里的_parentVnode)
       vnode.parent = _parentVnode;
       return vnode
     };
@@ -5188,9 +5205,13 @@
         // optimize internal component instantiation
         // since dynamic options merging is pretty slow, and none of the
         // internal component options needs special treatment.
+        // 2.组件初始化时配置项合并
         initInternalComponent$1(vm, options);
       } else {
+        // 1.项目初始化时配置项合并
+        // Vue根节点上挂载的配置项合并到当前vm.$options上
         vm.$options = mergeOptions(
+          // 这里的vm.constructor实际就是Vue对象，所以这里resolveConstructorOptions实际返回的是Vue.options(initGlobalAPI中定义了Vue.options)
           resolveConstructorOptions$1(vm.constructor),
           options || {},
           vm
@@ -7032,9 +7053,11 @@
 
       if (isUndef(oldVnode)) {
         // empty mount (likely as component), create new root element
+        // 组件挂载时调用__patch__(vm.$el, vnode...)  vm.$el为undefined，所以会走这里的逻辑
         isInitialPatch = true;
         createElm(vnode, insertedVnodeQueue);
       } else {
+        // new Vue({el:'#app'}) 初始化的时候会走这里的逻辑
         var isRealElement = isDef(oldVnode.nodeType);
         // diff算法vnode虚拟dom对比更新
         if (!isRealElement && sameVnode(oldVnode, vnode)) {

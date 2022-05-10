@@ -43,6 +43,7 @@ export function resolveAsyncComponent (
   baseCtor: Class<Component>,
   context: Component
 ): Class<Component> | void {
+  // 渲染error错误组件
   if (isTrue(factory.error) && isDef(factory.errorComp)) {
     return factory.errorComp
   }
@@ -50,7 +51,8 @@ export function resolveAsyncComponent (
   if (isDef(factory.resolved)) {
     return factory.resolved
   }
-
+  
+  // 渲染loading加载组件
   if (isTrue(factory.loading) && isDef(factory.loadingComp)) {
     return factory.loadingComp
   }
@@ -96,12 +98,14 @@ export function resolveAsyncComponent (
     const res = factory(resolve, reject)
 
     if (isObject(res)) {
+      // Promise形式定义的异步组件
       if (isPromise(res)) {
         // () => Promise
         if (isUndef(factory.resolved)) {
           res.then(resolve, reject)
         }
       } else if (isPromise(res.component)) {
+        // 高级异步组件
         res.component.then(resolve, reject)
 
         if (isDef(res.error)) {

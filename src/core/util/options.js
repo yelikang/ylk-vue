@@ -142,6 +142,7 @@ strats.data = function (
 
 /**
  * Hooks and props are merged as arrays.
+ * 合并多个钩子函数，成为一个包含多个钩子函数的数组
  */
 function mergeHook (
   parentVal: ?Array<Function>,
@@ -170,6 +171,7 @@ function dedupeHooks (hooks) {
 }
 
 LIFECYCLE_HOOKS.forEach(hook => {
+  // 对于生命周期钩子函数的合并，会返回一个数组；所以组件多个相同的钩子函数会依次进行
   strats[hook] = mergeHook
 })
 
@@ -186,9 +188,11 @@ function mergeAssets (
   vm?: Component,
   key: string
 ): Object {
+  // 创建一个继承父类的对象
   const res = Object.create(parentVal || null)
   if (childVal) {
     process.env.NODE_ENV !== 'production' && assertObjectType(key, childVal, vm)
+    // childVal属性全部赋值到res上
     return extend(res, childVal)
   } else {
     return res
@@ -419,14 +423,17 @@ export function mergeOptions (
 
   const options = {}
   let key
+  // 先将父级的所有属性合并到子级的options上
   for (key in parent) {
     mergeField(key)
   }
+  // 如果子级的某个属性父级没有，就赋值该属性给自己的options
   for (key in child) {
     if (!hasOwn(parent, key)) {
       mergeField(key)
     }
   }
+  // 合并某个属性
   function mergeField (key) {
     const strat = strats[key] || defaultStrat
     options[key] = strat(parent[key], child[key], vm, key)
@@ -457,6 +464,7 @@ export function resolveAsset (
   const PascalCaseId = capitalize(camelizedId)
   if (hasOwn(assets, PascalCaseId)) return assets[PascalCaseId]
   // fallback to prototype chain
+  // 局部组件中寻找不到，就通过原型链进行全局Vue上的寻找
   const res = assets[id] || assets[camelizedId] || assets[PascalCaseId]
   if (process.env.NODE_ENV !== 'production' && warnMissing && !res) {
     warn(

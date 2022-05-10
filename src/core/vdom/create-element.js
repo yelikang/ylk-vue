@@ -103,6 +103,7 @@ export function _createElement (
         undefined, undefined, context
       )
     } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+      // isDef 判断组件是否声明在局部、全局中，如果声明了就代表这是个组件，否则创建一个未知的vnode；__patch创建真实节点的时候会校验这个vnode
       // component
       // 判断当前要构建的vnode是不是组件vnode
       vnode = createComponent(Ctor, data, context, children, tag)

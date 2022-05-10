@@ -33,9 +33,14 @@ export function initMixin (Vue: Class<Component>) {
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
       // internal component options needs special treatment.
+      // 2.组件初始化时配置项合并
       initInternalComponent(vm, options)
     } else {
+      // 1.项目初始化时配置项合并
+      // Vue根节点上挂载的配置项合并到当前vm.$options上
       vm.$options = mergeOptions(
+        // 这里的vm.constructor实际就是Vue对象，所以这里resolveConstructorOptions实际返回的是Vue.options(initGlobalAPI中定义了Vue.options)
+        // 所以这里合并的是Vue.options + new Vue中的配置项
         resolveConstructorOptions(vm.constructor),
         options || {},
         vm

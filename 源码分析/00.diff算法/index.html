@@ -1,0 +1,59 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-10 21:47:02
+ * @FilePath: \ylk-vue\源码分析\00.diff算法\index.html
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>diff算法</title>
+  </head>
+  <body>
+    <div id="app">
+      <children v-for="(item, index) in list1" :text="item.name" @delete="_remove(index)">
+
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+
+    new Vue({
+      el: "#app",
+      data(){
+        return {
+          list1:[{
+            name:'叶立康1'
+          },{
+            name:'叶立康2'
+          },{
+            name:'叶立康3'
+          }]
+        }
+      },
+      components:{
+        children:{
+          template:`<div>{{text}}<input/> <a @click="_delete">删除</a></div>`,
+          props:['text'],
+          methods:{
+            _delete(){
+              this.$emit('delete')
+            }
+          }
+        }
+      },
+      methods:{
+        _remove(index){
+          this.list1.splice(index, 1)
+        }
+      }
+    });
+  </script>
+</html>

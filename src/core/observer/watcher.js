@@ -50,7 +50,9 @@ export default class Watcher {
     isRenderWatcher?: boolean
   ) {
     this.vm = vm
+    // 判断是否渲染watcher
     if (isRenderWatcher) {
+      // 下划线watcher代表是渲染watcher(页面渲染内容，另外还有计算watcher等($watch))
       vm._watcher = this
     }
     vm._watchers.push(this)
@@ -228,6 +230,7 @@ export default class Watcher {
    * Remove self from all dependencies' subscriber list.
    */
   teardown () {
+    // 卸载watcher
     if (this.active) {
       // remove self from vm's watcher list
       // this is a somewhat expensive operation so we skip it

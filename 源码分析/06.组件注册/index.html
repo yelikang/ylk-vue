@@ -1,0 +1,70 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-08 16:08:58
+ * @FilePath: \ylk-vue\源码分析\06.组件注册\index.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>06.组件注册流程分析</title>
+  </head>
+  <body>
+    <div id="app">
+      <children />
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    const children = {
+      name:'children',
+      data(){
+        return {
+          son:'我是儿子',
+          justOne: true
+        }
+      },
+      template:`<div>{{son}} <global-component/><c-test/></div>`,
+      created(){
+        console.log('children', this)
+      }
+    }
+
+
+    // 全局组件
+    // Vue.component方法是在初始化时调用initGlobalApi中的initAssetRegisters方法
+    // 给Vue上挂载component、directive、filter方法
+    // Vue.component方法中的具体实现，最后会将组件挂载到this.$option.components上(实际上是Vue.options)，
+    // 而所有的组件都会merge Vue上的options属性，到自身的vm.$options上
+    // 后续的组件则都是通过$options的原型链继承Vue上的components组件，所以会找到
+    Vue.component('global-component',{
+      template:`<div>我是全局组件</div>`,
+      created(){
+        console.log('global', this)
+      }
+    })
+
+    new Vue({
+      el: "#app",
+      data(){
+        return {
+          name:'我是父亲'
+        }
+      },
+      components:{
+        // 局部注册
+        // 局部组件注册则是通过组件创建vnode的时候，将当前组件的options配置项，与Vue.options的配置项合并到构造函数Sub上
+        // 实例化的时候，将构造函数Sub上的options赋值给当前的vm.$options；
+        // 所以当前vm.$options.components上会包含当前组件，如果不包含会通过原型链查找Vue.options上的components内容
+        children
+      }
+    });
+
+    
+  </script>
+</html>

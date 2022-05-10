@@ -34,6 +34,7 @@ import {
 
 // inline hooks to be invoked on component VNodes during patch
 const componentVNodeHooks = {
+  // 组件vnode初始化方法(组件的实例创建，挂载会在这里进行)
   init (vnode: VNodeWithData, hydrating: boolean): ?boolean {
     if (
       vnode.componentInstance &&
@@ -44,16 +45,18 @@ const componentVNodeHooks = {
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
     } else {
-      // 创建组件实例(会调用_init方法)
+      // 创建vm组件实例(会调用_init方法)
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
+        // 这里的activeInstance其实是父级vm实例(父组件在调用_update时会调用setActiveInstance赋值activeInstance为当前组件vm)
+        // 这样在子组件创建过程中就能够通过activeInstance获取父级vm实例
         activeInstance
       )
       // 组件挂载
       child.$mount(hydrating ? vnode.elm : undefined, hydrating)
     }
   },
-
+  // 组件的更新方法
   prepatch (oldVnode: MountedComponentVNode, vnode: MountedComponentVNode) {
     const options = vnode.componentOptions
     const child = vnode.componentInstance = oldVnode.componentInstance
@@ -124,7 +127,7 @@ export function createComponent (
 
   // plain options object: turn it into a constructor
   if (isObject(Ctor)) {
-    // 调用Vue.extend方法
+    // 调用Vue.extend方法(如果是全局组件不会调用这里，因为在全局Vue.component过程中已经执行了Vue.extend；创建了组件vnode的构造函数)
     Ctor = baseCtor.extend(Ctor)
   }
 
@@ -140,12 +143,14 @@ export function createComponent (
   // async component
   let asyncFactory
   if (isUndef(Ctor.cid)) {
+    // 异步组件执行逻辑
     asyncFactory = Ctor
     Ctor = resolveAsyncComponent(asyncFactory, baseCtor, context)
     if (Ctor === undefined) {
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
+      // 先渲染一个注释节点
       return createAsyncPlaceholder(
         asyncFactory,
         data,
@@ -226,7 +231,9 @@ export function createComponentInstanceForVnode (
   const options: InternalComponentOptions = {
     // 调用Vue.prototype._init方法时会判断options._isComponent
     _isComponent: true,
+    // 组件占位vnode
     _parentVnode: vnode,
+    // activeInstance
     parent
   }
   // check inline-template render functions
@@ -236,6 +243,7 @@ export function createComponentInstanceForVnode (
     options.staticRenderFns = inlineTemplate.staticRenderFns
   }
   // 构造一个Component实例,这了实际调用_init,将_init作为构造函数new 一个Component实例
+  // vnode.componentOptions.Ctor构造函数 是在createComponent 通过baseCtor.extend(Ctor)创建Ctor，并通过new Vnode构造函数传入vnode.componentOptions
   return new vnode.componentOptions.Ctor(options)
 }
 

@@ -34,12 +34,16 @@ export function initExtend (Vue: GlobalAPI) {
     const Sub = function VueComponent (options) {
       this._init(options)
     }
-    // 子构造函数原型链指向父类
+    // 子构造函数原型链指向父类的prototype
     Sub.prototype = Object.create(Super.prototype)
+    // 构造函数指回自己
     Sub.prototype.constructor = Sub
     Sub.cid = cid++
+    // 这里合并的是Vue.options上的属性 + 组件自身的options内容
     Sub.options = mergeOptions(
+      // Vue.options上的属性
       Super.options,
+      // 组件自身的options
       extendOptions
     )
     Sub['super'] = Super
@@ -66,6 +70,7 @@ export function initExtend (Vue: GlobalAPI) {
     })
     // enable recursive self-lookup
     if (name) {
+      // 自身的components属性上赋值自己，自查找；可以递归自调用(但要在组件中定义name)
       Sub.options.components[name] = Sub
     }
 

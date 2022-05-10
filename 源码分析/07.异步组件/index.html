@@ -1,0 +1,59 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-08 16:47:47
+ * @FilePath: \ylk-vue\源码分析\07.异步组件\index.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>07.异步组件</title>
+  </head>
+  <body>
+    <div id="app">{{name}}</div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    // 异步组件定义方法
+
+    // 方式一：工厂函数(简写 Vue.component('c-test',resolve=>require(['@/component/c-test.vue'], resolve)))
+    // Vue.component('c-test',function(resolve, reject){
+    //   require(['@/component/c-test.vue'],function(res){
+    //     resolve(res)
+    //   })
+    // })
+
+    // 方式二： Promise (import会返回一个Promise对象)
+    // Vue.component('c-test', ()=> import('@/component/c-test.vue'))
+
+    // 方式三: 高级异步组件
+    const AdvancedAsyncComp = () => ({
+      // 需要加载的组件。应当是一个Promise对象
+      component: import('@/component/c-test.vue'),
+      // 加载中应当渲染的组件
+      loading: LoadingComp,
+      // 出错时渲染的组件
+      error: ErrorComp,
+      // 渲染加载中组件的等待时间。默认: 200ms(先展示加载中组件，过多少秒之后加载渲染目标组件)
+      delay: 200,
+      // 最长等待时间，超过此时间则渲染错误组件，默认值是：`Infinity`
+      timeout: 1000
+    })
+    Vue.component('c-test', AdvancedAsyncComp)
+
+    new Vue({
+      el: "#app",
+      data(){
+        return {
+          name:'我是父亲'
+        }
+      }
+    });
+  </script>
+</html>

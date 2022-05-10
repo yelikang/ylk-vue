@@ -72,6 +72,8 @@ export function renderMixin (Vue: Class<Component>) {
 
     // set parent vnode. this allows render functions to have access
     // to the data on the placeholder node.
+    // 占位vnode: 父级占位$vnode(例如创建的 vue-component-1-children 占位$vnode;可以理解为某个子组件未解析时的vnode)
+    // 渲染vnode: 这里的vnode则是将子组件实际解析生成的vnode,可以理解为某个子组件解析内容后的vnode
     vm.$vnode = _parentVnode
     // render self
     let vnode
@@ -109,6 +111,7 @@ export function renderMixin (Vue: Class<Component>) {
       vnode = createEmptyVNode()
     }
     // set parent
+    // 组件实际解析出来的vnode，利用parent指向未解析前的组件占位$vnode(即这里的_parentVnode)
     vnode.parent = _parentVnode
     return vnode
   }

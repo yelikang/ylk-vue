@@ -714,9 +714,11 @@ export function createPatchFunction (backend) {
 
     if (isUndef(oldVnode)) {
       // empty mount (likely as component), create new root element
+      // 组件挂载时调用__patch__(vm.$el, vnode...)  vm.$el为undefined，所以会走这里的逻辑
       isInitialPatch = true
       createElm(vnode, insertedVnodeQueue)
     } else {
+      // new Vue({el:'#app'}) 初始化的时候会走这里的逻辑
       const isRealElement = isDef(oldVnode.nodeType)
       // diff算法vnode虚拟dom对比更新
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
