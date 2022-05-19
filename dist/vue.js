@@ -1804,9 +1804,11 @@
     vm,
     key
   ) {
+    // 创建一个继承父类的对象
     var res = Object.create(parentVal || null);
     if (childVal) {
       assertObjectType(key, childVal, vm);
+      // childVal属性全部赋值到res上
       return extend(res, childVal)
     } else {
       return res
@@ -2078,6 +2080,7 @@
     var PascalCaseId = capitalize(camelizedId);
     if (hasOwn(assets, PascalCaseId)) { return assets[PascalCaseId] }
     // fallback to prototype chain
+    // 局部组件中寻找不到，就通过原型链进行全局Vue上的寻找
     var res = assets[id] || assets[camelizedId] || assets[PascalCaseId];
     if (warnMissing && !res) {
       warn(
@@ -2610,6 +2613,7 @@
     baseCtor,
     context
   ) {
+    // 渲染error错误组件
     if (isTrue(factory.error) && isDef(factory.errorComp)) {
       return factory.errorComp
     }
@@ -2617,7 +2621,8 @@
     if (isDef(factory.resolved)) {
       return factory.resolved
     }
-
+    
+    // 渲染loading加载组件
     if (isTrue(factory.loading) && isDef(factory.loadingComp)) {
       return factory.loadingComp
     }
@@ -2663,12 +2668,14 @@
       var res = factory(resolve, reject);
 
       if (isObject(res)) {
+        // Promise形式定义的异步组件
         if (isPromise(res)) {
           // () => Promise
           if (isUndef(factory.resolved)) {
             res.then(resolve, reject);
           }
         } else if (isPromise(res.component)) {
+          // 高级异步组件
           res.component.then(resolve, reject);
 
           if (isDef(res.error)) {
@@ -3218,6 +3225,7 @@
     //    user watchers are created before the render watcher)
     // 3. If a component is destroyed during a parent component's watcher run,
     //    its watchers can be skipped.
+    // id小的排在前面(父组件在前)
     queue.sort(function (a, b) { return a.id - b.id; });
 
     // do not cache length because more watchers might be pushed
@@ -3225,7 +3233,7 @@
     for (index = 0; index < queue.length; index++) {
       watcher = queue[index];
       if (watcher.before) {
-        // 执行beforeUpdate钩子函数
+        // 执行beforeUpdate钩子函数(父组件先执行)
         watcher.before();
       }
       id = watcher.id;
@@ -3338,7 +3346,9 @@
     isRenderWatcher
   ) {
     this.vm = vm;
+    // 判断是否渲染watcher
     if (isRenderWatcher) {
+      // 下划线watcher代表是渲染watcher(页面渲染内容，另外还有计算watcher等($watch))
       vm._watcher = this;
     }
     vm._watchers.push(this);
@@ -4691,6 +4701,7 @@
 
   // inline hooks to be invoked on component VNodes during patch
   var componentVNodeHooks$1 = {
+    // 组件vnode初始化方法(组件的实例创建，挂载会在这里进行)
     init: function init (vnode, hydrating) {
       if (
         vnode.componentInstance &&
@@ -4712,7 +4723,7 @@
         child.$mount(hydrating ? vnode.elm : undefined, hydrating);
       }
     },
-
+    // 组件的更新方法
     prepatch: function prepatch (oldVnode, vnode) {
       var options = vnode.componentOptions;
       var child = vnode.componentInstance = oldVnode.componentInstance;
@@ -4784,7 +4795,7 @@
 
     // plain options object: turn it into a constructor
     if (isObject(Ctor)) {
-      // 调用Vue.extend方法
+      // 调用Vue.extend方法(如果是全局组件不会调用这里，因为在全局Vue.component过程中已经执行了Vue.extend；创建了组件vnode的构造函数)
       Ctor = baseCtor.extend(Ctor);
     }
 
@@ -4800,12 +4811,14 @@
     // async component
     var asyncFactory;
     if (isUndef(Ctor.cid)) {
+      // 异步组件执行逻辑
       asyncFactory = Ctor;
       Ctor = resolveAsyncComponent(asyncFactory, baseCtor, context);
       if (Ctor === undefined) {
         // return a placeholder node for async component, which is rendered
         // as a comment node but preserves all the raw information for the node.
         // the information will be used for async server-rendering and hydration.
+        // 先渲染一个注释节点
         return createAsyncPlaceholder(
           asyncFactory,
           data,
@@ -4890,6 +4903,7 @@
       options.staticRenderFns = inlineTemplate.staticRenderFns;
     }
     // 构造一个Component实例,这了实际调用_init,将_init作为构造函数new 一个Component实例
+    // vnode.componentOptions.Ctor构造函数 是在createComponent 通过baseCtor.extend(Ctor)创建Ctor，并通过new Vnode构造函数传入vnode.componentOptions
     return new vnode.componentOptions.Ctor(options)
   }
 
@@ -5021,6 +5035,7 @@
           undefined, undefined, context
         );
       } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+        // isDef 判断组件是否声明在局部、全局中，如果声明了就代表这是个组件，否则创建一个未知的vnode；__patch创建真实节点的时候会校验这个vnode
         // component
         // 判断当前要构建的vnode是不是组件vnode
         vnode = createComponent$1(Ctor, data, context, children, tag);
@@ -5212,6 +5227,7 @@
         // Vue根节点上挂载的配置项合并到当前vm.$options上
         vm.$options = mergeOptions(
           // 这里的vm.constructor实际就是Vue对象，所以这里resolveConstructorOptions实际返回的是Vue.options(initGlobalAPI中定义了Vue.options)
+          // 所以这里合并的是Vue.options + new Vue中的配置项
           resolveConstructorOptions$1(vm.constructor),
           options || {},
           vm
@@ -5378,12 +5394,16 @@
       var Sub = function VueComponent (options) {
         this._init(options);
       };
-      // 子构造函数原型链指向父类
+      // 子构造函数原型链指向父类的prototype
       Sub.prototype = Object.create(Super.prototype);
+      // 构造函数指回自己
       Sub.prototype.constructor = Sub;
       Sub.cid = cid++;
+      // 这里合并的是Vue.options上的属性 + 组件自身的options内容
       Sub.options = mergeOptions(
+        // Vue.options上的属性
         Super.options,
+        // 组件自身的options
         extendOptions
       );
       Sub['super'] = Super;
@@ -5410,6 +5430,7 @@
       });
       // enable recursive self-lookup
       if (name) {
+        // 自身的components属性上赋值自己，自查找；可以递归自调用(但要在组件中定义name)
         Sub.options.components[name] = Sub;
       }
 
@@ -6417,7 +6438,9 @@
     var i, key;
     var map = {};
     for (i = beginIdx; i <= endIdx; ++i) {
+      // 节点的key
       key = children[i].key;
+      // 以节点的key为键，节点的下标为value，生成map对象
       if (isDef(key)) { map[key] = i; }
     }
     return map
@@ -6691,11 +6714,14 @@
 
     function invokeDestroyHook (vnode) {
       var i, j;
+      // 获取data对象
       var data = vnode.data;
       if (isDef(data)) {
+        // 执行data.hook.destory 钩子
         if (isDef(i = data.hook) && isDef(i = i.destroy)) { i(vnode); }
         for (i = 0; i < cbs.destroy.length; ++i) { cbs.destroy[i](vnode); }
       }
+      // 递归的销毁所有子节点
       if (isDef(i = vnode.children)) {
         for (j = 0; j < vnode.children.length; ++j) {
           invokeDestroyHook(vnode.children[j]);
@@ -6747,13 +6773,21 @@
     }
 
     function updateChildren (parentElm, oldCh, newCh, insertedVnodeQueue, removeOnly) {
+      // 旧节点起始(当前)位置
       var oldStartIdx = 0;
+      // 新节点起始位置
       var newStartIdx = 0;
+      // 旧节点结束位置
       var oldEndIdx = oldCh.length - 1;
+      // 第一个(当前)旧节点
       var oldStartVnode = oldCh[0];
+      // 最后一个旧节点
       var oldEndVnode = oldCh[oldEndIdx];
+      // 新节点结束位置
       var newEndIdx = newCh.length - 1;
+      // 第一个(当前)新节点
       var newStartVnode = newCh[0];
+      // 最后一个新节点
       var newEndVnode = newCh[newEndIdx];
       var oldKeyToIdx, idxInOld, vnodeToMove, refElm;
 
@@ -6772,48 +6806,69 @@
         } else if (isUndef(oldEndVnode)) {
           oldEndVnode = oldCh[--oldEndIdx];
         } else if (sameVnode(oldStartVnode, newStartVnode)) {
+          // 猜想1：旧的起始节点，与新的起始节点一致
           patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
           oldStartVnode = oldCh[++oldStartIdx];
           newStartVnode = newCh[++newStartIdx];
         } else if (sameVnode(oldEndVnode, newEndVnode)) {
+          // 猜想2：旧的尾节点，与新的尾节点一致
           patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx);
           oldEndVnode = oldCh[--oldEndIdx];
           newEndVnode = newCh[--newEndIdx];
         } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+          // 猜想3：旧的起始节点，与新的尾节点一致
           patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx);
+          // 移动节点
           canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm));
           oldStartVnode = oldCh[++oldStartIdx];
           newEndVnode = newCh[--newEndIdx];
         } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+          // 猜想4：旧的尾节点，与新的首节点一致
           patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
+          // 移动节点
           canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm);
           oldEndVnode = oldCh[--oldEndIdx];
           newStartVnode = newCh[++newStartIdx];
         } else {
+          // 走到这里，则说明猜想没有命中，没办法只能遍历两个数组，找出相同节点 (例如[1,2,3,4]变成[3,1,4,2])
+          // 生成老节点的map对象；以节点的key为键，节点的下标为value，{key: idex}，例如:{goods_id_1 : 1, goods_id_2: 2}
           if (isUndef(oldKeyToIdx)) { oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx); }
+          // 从老节点的 map 对象中，根据新节点的 key 找到新开始节点在老节点数组中对应的下标
           idxInOld = isDef(newStartVnode.key)
             ? oldKeyToIdx[newStartVnode.key]
             : findIdxInOld(newStartVnode, oldCh, oldStartIdx, oldEndIdx);
           if (isUndef(idxInOld)) { // New element
+            // 如果下标不存在，也就是说，新开始节点在老节点数组中没找到，说明是新增节点
             createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm, false, newCh, newStartIdx);
           } else {
+            // 存在，找到了相同节点
             vnodeToMove = oldCh[idxInOld];
             if (sameVnode(vnodeToMove, newStartVnode)) {
+              // 两个节点是同一个节点，则更新节点，然后移动节点
               patchVnode(vnodeToMove, newStartVnode, insertedVnodeQueue, newCh, newStartIdx);
+              // 对应上面的  if (isUndef(oldStartVnode))  逻辑 
               oldCh[idxInOld] = undefined;
               canMove && nodeOps.insertBefore(parentElm, vnodeToMove.elm, oldStartVnode.elm);
             } else {
+              // 比较少见，新老节点key先沟通，但却不是同一个节点。则认为新节点是新增，则创建
               // same key but different element. treat as new element
               createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm, false, newCh, newStartIdx);
             }
           }
+          // 第一个新节点处理完，右边后移
           newStartVnode = newCh[++newStartIdx];
         }
       }
+
+      // 收尾工作
       if (oldStartIdx > oldEndIdx) {
+        // 老节点循环先结束(新增)
+        // 老开始大于老结束，说明老节点被先遍历完，则剩余的新节点是新增节点，创建插入即可
         refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm;
         addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
       } else if (newStartIdx > newEndIdx) {
+        // 新节点循环先结束(删除)
+        // 新节点先遍历结束，则剩余的老节点说明被删除掉了，移除即可
         removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
       }
     }
@@ -6851,6 +6906,7 @@
       index,
       removeOnly
     ) {
+      // 1.两个节点相同(指向一致，直接返回)
       if (oldVnode === vnode) {
         return
       }
@@ -6859,7 +6915,8 @@
         // clone reused vnode
         vnode = ownerArray[index] = cloneVNode(vnode);
       }
-
+      
+      // 复用旧节点的真实元素elm
       var elm = vnode.elm = oldVnode.elm;
 
       if (isTrue(oldVnode.isAsyncPlaceholder)) {
@@ -6875,6 +6932,7 @@
       // note we only do this if the vnode is cloned -
       // if the new node is not cloned it means the render functions have been
       // reset by the hot-reload-api and we need to do a proper re-render.
+      // 新旧节点都是静态节点，赋值component实例
       if (isTrue(vnode.isStatic) &&
         isTrue(oldVnode.isStatic) &&
         vnode.key === oldVnode.key &&
@@ -6886,31 +6944,44 @@
 
       var i;
       var data = vnode.data;
+      // 组件节点
       if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
         i(oldVnode, vnode);
       }
 
+      // 获取新旧节点的children子节点
       var oldCh = oldVnode.children;
       var ch = vnode.children;
+
+      // 全量更新节点的所有属性(不管有没有变更，vue3.0在这里做了大量的优化，引入了block的概念)
       if (isDef(data) && isPatchable(vnode)) {
+        // 更新data上的属性，attrs、class、listeners、props、style等
         for (i = 0; i < cbs.update.length; ++i) { cbs.update[i](oldVnode, vnode); }
         if (isDef(i = data.hook) && isDef(i = i.update)) { i(oldVnode, vnode); }
       }
+
+
+      // 非文本节点，对比新旧节点的children子节点
       if (isUndef(vnode.text)) {
         if (isDef(oldCh) && isDef(ch)) {
+          // 新老节点都有孩子，并且孩子不相同；则进行children的diff
           if (oldCh !== ch) { updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly); }
         } else if (isDef(ch)) {
+          // 新节点存在孩子，老节点的孩子不存在，说明是新增
           {
             checkDuplicateKeys(ch);
           }
           if (isDef(oldVnode.text)) { nodeOps.setTextContent(elm, ''); }
           addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue);
         } else if (isDef(oldCh)) {
+          // 新节点的孩子不存在，老节点的孩子存在，说明这些孩子节点被删除了
           removeVnodes(elm, oldCh, 0, oldCh.length - 1);
         } else if (isDef(oldVnode.text)) {
+          // 老节点的文本存在，新的不存在，清空文本
           nodeOps.setTextContent(elm, '');
         }
       } else if (oldVnode.text !== vnode.text) {
+        // 新旧节点都是文本节点，且文本节点内容不同；直接赋值新节点的文本内容
         nodeOps.setTextContent(elm, vnode.text);
       }
       if (isDef(data)) {
@@ -7043,6 +7114,7 @@
     }
 
     return function patch (oldVnode, vnode, hydrating, removeOnly) {
+      // 新节点不存在，老节点存在，销毁老节点
       if (isUndef(vnode)) {
         if (isDef(oldVnode)) { invokeDestroyHook(oldVnode); }
         return
@@ -7052,8 +7124,8 @@
       var insertedVnodeQueue = [];
 
       if (isUndef(oldVnode)) {
+        // 新节点存在、老节点不存在；首次渲染组件时会走这里;注意：这里是首次渲染组件会走这里
         // empty mount (likely as component), create new root element
-        // 组件挂载时调用__patch__(vm.$el, vnode...)  vm.$el为undefined，所以会走这里的逻辑
         isInitialPatch = true;
         createElm(vnode, insertedVnodeQueue);
       } else {
@@ -7061,6 +7133,7 @@
         var isRealElement = isDef(oldVnode.nodeType);
         // diff算法vnode虚拟dom对比更新
         if (!isRealElement && sameVnode(oldVnode, vnode)) {
+          // 旧节点不是真实元素(是虚拟vnode)，且新旧节点是同一个节点，则进行patch
           // patch existing root node
           patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly);
         } else {
@@ -7093,13 +7166,14 @@
           }
 
           // replacing existing element
+          // 获取节点的真实元素
           // vnode上挂载的elm指向的就是真实的dom
           var oldElm = oldVnode.elm;
           // 真实的父级dom
           var parentElm = nodeOps.parentNode(oldElm);
 
           // create new node
-          // vnode挂载到真实的dom上
+          // 创建整个DOM树，vnode挂载到真实的dom上
           createElm(
             vnode,
             insertedVnodeQueue,
