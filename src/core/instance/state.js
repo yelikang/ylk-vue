@@ -48,11 +48,14 @@ export function proxy (target: Object, sourceKey: string, key: string) {
 export function initState (vm: Component) {
   vm._watchers = []
   const opts = vm.$options
+  // 优先处理props，所以在data中能获取到props相关属性、props中获取不到data属性
   if (opts.props) initProps(vm, opts.props)
+  // methods所有方法挂载到组件实例vm上
   if (opts.methods) initMethods(vm, opts.methods)
   if (opts.data) {
     initData(vm)
   } else {
+    // 没有data属性，初始化一个空对象
     observe(vm._data = {}, true /* asRootData */)
   }
   if (opts.computed) initComputed(vm, opts.computed)
@@ -127,6 +130,7 @@ function initData (vm: Component) {
   const props = vm.$options.props
   const methods = vm.$options.methods
   let i = keys.length
+  // 校验data中属性的名称，是否与method、props中的属性名称重复
   while (i--) {
     const key = keys[i]
     if (process.env.NODE_ENV !== 'production') {

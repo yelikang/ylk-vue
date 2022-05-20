@@ -119,6 +119,14 @@ export default class Watcher {
         traverse(value)
       }
       popTarget()
+      // 这里每次调用完组件的updateComponent之后，清理一下Deps；
+      // 理论上addDep过程会判断Dep的id是否重复，所以无需清理
+      // 但是考虑到A、B两个组件切换的场景:
+      // 首先渲染A组件，对A组件中的数据添加getter
+      // 通过条件渲染了B组件，对B组件的数据添加getter
+      // 这时候我们修改A组件的组局，如果没有移除依赖的过程；就会通知A组件中的所有订阅者进行回调。但其实A组件没有渲染，造成浪费
+      // 因此 Vue 设计了在每次添加完新的订阅，会移除掉旧的订阅，这样就保证了在我们刚才的场景中，
+      // 如果渲染 b 模板的时候去修改 a 模板的数据，a 数据订阅回调已经被移除了，所以不会有任何浪费
       this.cleanupDeps()
     }
     return value
@@ -144,17 +152,21 @@ export default class Watcher {
    * Clean up for dependency collection.
    */
   cleanupDeps () {
+    // 第一次来时deps为空数组，不会执行
     let i = this.deps.length
     while (i--) {
       const dep = this.deps[i]
+      // 旧的deps中有的Watcher,在新的newDepIds中没有，就移除订阅者
       if (!this.newDepIds.has(dep.id)) {
         dep.removeSub(this)
       }
     }
+    // depIds与newDepIds进行交换，depIds用来保留旧的Dep的id
     let tmp = this.depIds
     this.depIds = this.newDepIds
     this.newDepIds = tmp
     this.newDepIds.clear()
+    // deps 与 newDeps进行交换，deps用来保留旧的Dep
     tmp = this.deps
     this.deps = this.newDeps
     this.newDeps = tmp

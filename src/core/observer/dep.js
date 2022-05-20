@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-24 17:48:30
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-20 14:15:12
+ * @FilePath: \ylk-vue\src\core\observer\dep.js
+ */
 /* @flow */
 
 import type Watcher from './watcher'
@@ -16,7 +24,9 @@ export default class Dep {
   subs: Array<Watcher>;
 
   constructor () {
+    // id自增
     this.id = uid++
+    // 存储所有Watcher
     this.subs = []
   }
 

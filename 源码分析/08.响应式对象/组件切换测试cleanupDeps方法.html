@@ -1,0 +1,55 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-20 17:54:50
+ * @FilePath: \ylk-vue\源码分析\08.响应式对象\组件切换测试cleanupDeps方法.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cleanupDeps方法测试</title>
+  </head>
+  <body>
+    <div id="app">
+      <button @click="toggle">切换</button>
+      <button @click="change">变更</button>
+
+      <div v-if="show"> 
+        {{msg}}
+      </div>
+      <div v-else>
+        {{msg1}}
+      </div>
+    
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data: {
+        show: true,
+        msg:'小红',
+        msg1:'小明'
+      },
+      methods: {
+        toggle(){
+          // 这里切换之后，组件会重新updateComponent，然后调用_render重新调用getter
+          // getter中会重新进行dep.depend调用Watcher中的addDep重新进行依赖搜集
+          // updateComponent完之后，对比之前的depIds与新的newDepIds，发现某些属性没有进行依赖收集(没有调用getter)
+          // 就从该属性的dep消息中心中移除掉Watcher订阅者，当下面的change改变msg时，也就不再调用updateComponent进行更新
+          this.show =  false;
+        },
+        change(){
+          this.msg = '小红' + new Date().getTime();
+        }
+      },
+    });
+  </script>
+</html>

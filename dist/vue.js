@@ -1192,7 +1192,14 @@
 
   /*  */
 
-  /*  */
+  /*
+   * @Description: 
+   * @Autor: lizi
+   * @Date: 2022-04-24 17:48:30
+   * @LastEditors: lizi
+   * @LastEditTime: 2022-05-20 14:15:12
+   * @FilePath: \ylk-vue\src\core\observer\dep.js
+   */
 
   var uid = 0;
 
@@ -1201,7 +1208,9 @@
    * directives subscribing to it.
    */
   var Dep = function Dep () {
+    // id自增
     this.id = uid++;
+    // 存储所有Watcher
     this.subs = [];
   };
 
@@ -1406,15 +1415,20 @@
     this.value = value;
     this.dep = new Dep();
     this.vmCount = 0;
+    // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
     def(value, '__ob__', this);
+    // 判断对象是否是数组
     if (Array.isArray(value)) {
       if (hasProto) {
+        // 重写数组的push、pop、shift、unshift、splice、sort、reverse方法
         protoAugment(value, arrayMethods);
       } else {
         copyAugment(value, arrayMethods, arrayKeys);
       }
+      // 对对象中的每个值都进行observe
       this.observeArray(value);
     } else {
+      // 普通对象
       this.walk(value);
     }
   };
@@ -1435,6 +1449,7 @@
    * Observe a list of Array items.
    */
   Observer.prototype.observeArray = function observeArray (items) {
+    // 对对象中的每个值都进行observe
     for (var i = 0, l = items.length; i < l; i++) {
       observe(items[i]);
     }
@@ -1483,6 +1498,8 @@
       Object.isExtensible(value) &&
       !value._isVue
     ) {
+      // 这里的Object.isExtensible会判断对象是否可以扩展，
+      // 如果对象Object.freeze之后，对象就不可以扩展，也就不会new Observer进行双向绑定
       ob = new Observer(value);
     }
     if (asRootData && ob) {
@@ -1502,28 +1519,38 @@
     shallow
   ) {
     var dep = new Dep();
-
+    // 拿到属性的Descriptor定义，如果不可configurable，就不进行双向绑定
     var property = Object.getOwnPropertyDescriptor(obj, key);
     if (property && property.configurable === false) {
       return
     }
 
     // cater for pre-defined getter/setters
+    // 如果预先定义了getter、setter;在实际调用的属性的时候回先调用getter.call
     var getter = property && property.get;
     var setter = property && property.set;
     if ((!getter || setter) && arguments.length === 2) {
       val = obj[key];
     }
-
+    // 递归子属性进行数据绑定
     var childOb = !shallow && observe(val);
     Object.defineProperty(obj, key, {
       enumerable: true,
       configurable: true,
       get: function reactiveGetter () {
         var value = getter ? getter.call(obj) : val;
+        // 访问属性时，开始依赖搜集
+
+        // 这里的Dep.target是在每个组件mountComponent时创建一个以Watcher对象，Watcher调用它的get方法时将Watcher对象pushTarget，
+        // 所以Dep.target实际上是当前属性所在组件的Watcher对象(一个组件对应一个Watcher)
+        // 组件先进行mounteComponent，然后创建Watcher，Watcher执行updateComponent回调，先执行_render创建虚拟dom、再执行_update 将虚拟dom渲染真实dom
+        // 在_render时会调用属性，从而调用这里的响应式getter函数reactiveGetter
+        // Observer观察者(被观察对象)， Watcher订阅者(观察者ob发生变化会通知所有watcher去更新组件)
         if (Dep.target) {
           dep.depend();
           if (childOb) {
+            // 子属性的Ob观察者，记录父组件的Watcher订阅者 ???
+            // 这的Dep.target实际上还是父级同一个Watcher ???
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray(value);
@@ -1549,6 +1576,8 @@
         } else {
           val = newVal;
         }
+        // 设置属性时进行派发更新
+        // 这里的observe(newVal)当属性(对象)，的值发生改变时，可能新增了某些属性；所以需要重新observe
         childOb = !shallow && observe(newVal);
         dep.notify();
       }
@@ -3413,6 +3442,14 @@
         traverse(value);
       }
       popTarget();
+      // 这里每次调用完组件的updateComponent之后，清理一下Deps；
+      // 理论上addDep过程会判断Dep的id是否重复，所以无需清理
+      // 但是考虑到A、B两个组件切换的场景:
+      // 首先渲染A组件，对A组件中的数据添加getter
+      // 通过条件渲染了B组件，对B组件的数据添加getter
+      // 这时候我们修改A组件的组局，如果没有移除依赖的过程；就会通知A组件中的所有订阅者进行回调。但其实A组件没有渲染，造成浪费
+      // 因此 Vue 设计了在每次添加完新的订阅，会移除掉旧的订阅，这样就保证了在我们刚才的场景中，
+      // 如果渲染 b 模板的时候去修改 a 模板的数据，a 数据订阅回调已经被移除了，所以不会有任何浪费
       this.cleanupDeps();
     }
     return value
@@ -3438,17 +3475,21 @@
    * Clean up for dependency collection.
    */
   Watcher.prototype.cleanupDeps = function cleanupDeps () {
+    // 第一次来时deps为空数组，不会执行
     var i = this.deps.length;
     while (i--) {
       var dep = this.deps[i];
+      // 旧的deps中有的Watcher,在新的newDepIds中没有，就移除订阅者
       if (!this.newDepIds.has(dep.id)) {
         dep.removeSub(this);
       }
     }
+    // depIds与newDepIds进行交换，depIds用来保留旧的Dep的id
     var tmp = this.depIds;
     this.depIds = this.newDepIds;
     this.newDepIds = tmp;
     this.newDepIds.clear();
+    // deps 与 newDeps进行交换，deps用来保留旧的Dep
     tmp = this.deps;
     this.deps = this.newDeps;
     this.newDeps = tmp;
@@ -3562,11 +3603,14 @@
   function initState (vm) {
     vm._watchers = [];
     var opts = vm.$options;
+    // 优先处理props，所以在data中能获取到props相关属性、props中获取不到data属性
     if (opts.props) { initProps(vm, opts.props); }
+    // methods所有方法挂载到组件实例vm上
     if (opts.methods) { initMethods(vm, opts.methods); }
     if (opts.data) {
       initData(vm);
     } else {
+      // 没有data属性，初始化一个空对象
       observe(vm._data = {}, true /* asRootData */);
     }
     if (opts.computed) { initComputed(vm, opts.computed); }
@@ -3641,6 +3685,7 @@
     var props = vm.$options.props;
     var methods = vm.$options.methods;
     var i = keys.length;
+    // 校验data中属性的名称，是否与method、props中的属性名称重复
     while (i--) {
       var key = keys[i];
       {
@@ -5244,6 +5289,7 @@
       initRender$1(vm);
       callHook(vm, 'beforeCreate');
       initInjections(vm); // resolve injections before data/props
+      // 初始化组件的props、data数据
       initState(vm);
       initProvide(vm); // resolve provide after data/props
       callHook(vm, 'created');
@@ -5649,15 +5695,20 @@
     this.value = value;
     this.dep = new Dep();
     this.vmCount = 0;
+    // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
     def(value, '__ob__', this);
+    // 判断对象是否是数组
     if (Array.isArray(value)) {
       if (hasProto) {
+        // 重写数组的push、pop、shift、unshift、splice、sort、reverse方法
         protoAugment$1(value, arrayMethods);
       } else {
         copyAugment$1(value, arrayMethods, arrayKeys$1);
       }
+      // 对对象中的每个值都进行observe
       this.observeArray(value);
     } else {
+      // 普通对象
       this.walk(value);
     }
   };
@@ -5678,6 +5729,7 @@
    * Observe a list of Array items.
    */
   Observer$1.prototype.observeArray = function observeArray (items) {
+    // 对对象中的每个值都进行observe
     for (var i = 0, l = items.length; i < l; i++) {
       observe$1(items[i]);
     }
@@ -5726,6 +5778,8 @@
       Object.isExtensible(value) &&
       !value._isVue
     ) {
+      // 这里的Object.isExtensible会判断对象是否可以扩展，
+      // 如果对象Object.freeze之后，对象就不可以扩展，也就不会new Observer进行双向绑定
       ob = new Observer$1(value);
     }
     if (asRootData && ob) {
@@ -5745,28 +5799,38 @@
     shallow
   ) {
     var dep = new Dep();
-
+    // 拿到属性的Descriptor定义，如果不可configurable，就不进行双向绑定
     var property = Object.getOwnPropertyDescriptor(obj, key);
     if (property && property.configurable === false) {
       return
     }
 
     // cater for pre-defined getter/setters
+    // 如果预先定义了getter、setter;在实际调用的属性的时候回先调用getter.call
     var getter = property && property.get;
     var setter = property && property.set;
     if ((!getter || setter) && arguments.length === 2) {
       val = obj[key];
     }
-
+    // 递归子属性进行数据绑定
     var childOb = !shallow && observe$1(val);
     Object.defineProperty(obj, key, {
       enumerable: true,
       configurable: true,
       get: function reactiveGetter () {
         var value = getter ? getter.call(obj) : val;
+        // 访问属性时，开始依赖搜集
+
+        // 这里的Dep.target是在每个组件mountComponent时创建一个以Watcher对象，Watcher调用它的get方法时将Watcher对象pushTarget，
+        // 所以Dep.target实际上是当前属性所在组件的Watcher对象(一个组件对应一个Watcher)
+        // 组件先进行mounteComponent，然后创建Watcher，Watcher执行updateComponent回调，先执行_render创建虚拟dom、再执行_update 将虚拟dom渲染真实dom
+        // 在_render时会调用属性，从而调用这里的响应式getter函数reactiveGetter
+        // Observer观察者(被观察对象)， Watcher订阅者(观察者ob发生变化会通知所有watcher去更新组件)
         if (Dep.target) {
           dep.depend();
           if (childOb) {
+            // 子属性的Ob观察者，记录父组件的Watcher订阅者 ???
+            // 这的Dep.target实际上还是父级同一个Watcher ???
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray$1(value);
@@ -5792,6 +5856,8 @@
         } else {
           val = newVal;
         }
+        // 设置属性时进行派发更新
+        // 这里的observe(newVal)当属性(对象)，的值发生改变时，可能新增了某些属性；所以需要重新observe
         childOb = !shallow && observe$1(newVal);
         dep.notify();
       }
@@ -6831,17 +6897,21 @@
           newStartVnode = newCh[++newStartIdx];
         } else {
           // 走到这里，则说明猜想没有命中，没办法只能遍历两个数组，找出相同节点 (例如[1,2,3,4]变成[3,1,4,2])
+
           // 生成老节点的map对象；以节点的key为键，节点的下标为value，{key: idex}，例如:{goods_id_1 : 1, goods_id_2: 2}
           if (isUndef(oldKeyToIdx)) { oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx); }
           // 从老节点的 map 对象中，根据新节点的 key 找到新开始节点在老节点数组中对应的下标
+          // 所以这是key，可以直接通过下标key拿到节点；而不是通过循环获取
           idxInOld = isDef(newStartVnode.key)
             ? oldKeyToIdx[newStartVnode.key]
             : findIdxInOld(newStartVnode, oldCh, oldStartIdx, oldEndIdx);
+          
+            // 没找到相同key的节点
           if (isUndef(idxInOld)) { // New element
             // 如果下标不存在，也就是说，新开始节点在老节点数组中没找到，说明是新增节点
             createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm, false, newCh, newStartIdx);
           } else {
-            // 存在，找到了相同节点
+            // 存在，找到了相同key的节点
             vnodeToMove = oldCh[idxInOld];
             if (sameVnode(vnodeToMove, newStartVnode)) {
               // 两个节点是同一个节点，则更新节点，然后移动节点
@@ -6932,7 +7002,7 @@
       // note we only do this if the vnode is cloned -
       // if the new node is not cloned it means the render functions have been
       // reset by the hot-reload-api and we need to do a proper re-render.
-      // 新旧节点都是静态节点，赋值component实例
+      // 新旧节点都是静态节点，赋值旧的component实例给新的vnode
       if (isTrue(vnode.isStatic) &&
         isTrue(oldVnode.isStatic) &&
         vnode.key === oldVnode.key &&
@@ -6961,7 +7031,7 @@
       }
 
 
-      // 非文本节点，对比新旧节点的children子节点
+      // 新创建的节点非文本节点，对比新旧节点的children子节点
       if (isUndef(vnode.text)) {
         if (isDef(oldCh) && isDef(ch)) {
           // 新老节点都有孩子，并且孩子不相同；则进行children的diff
@@ -6971,6 +7041,7 @@
           {
             checkDuplicateKeys(ch);
           }
+          // 老节点是文本节点
           if (isDef(oldVnode.text)) { nodeOps.setTextContent(elm, ''); }
           addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue);
         } else if (isDef(oldCh)) {

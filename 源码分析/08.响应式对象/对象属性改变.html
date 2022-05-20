@@ -1,0 +1,55 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-20 15:46:55
+ * @FilePath: \ylk-vue\源码分析\08.响应式对象\对象属性改变.html
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>响应式对象</title>
+  </head>
+  <body>
+    <div id="app">
+      <span @click="$_test">我是内容</span>
+      <span @click="$_age">年龄改变</span>
+      {{user.name}}
+      {{user.age}}
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    new Vue({
+      el:'#app',
+      // template:'<App/>',
+      // components:{
+      //   App:{
+      //     template:'<div>App组件</div>'
+      //   }
+      // },
+      data:{
+        user:{
+          name:'叶立康'
+        }
+      },
+      methods:{
+        $_test(){
+            this.user = {
+              name:'叶立康2',
+              age: 12
+            }
+        },
+        $_age(){
+          this.user.age = 666
+        }
+      }
+    })
+  </script>
+</html>

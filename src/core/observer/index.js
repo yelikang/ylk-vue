@@ -43,15 +43,20 @@ export class Observer {
     this.value = value
     this.dep = new Dep()
     this.vmCount = 0
+    // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
     def(value, '__ob__', this)
+    // 判断对象是否是数组
     if (Array.isArray(value)) {
       if (hasProto) {
+        // 重写数组的push、pop、shift、unshift、splice、sort、reverse方法
         protoAugment(value, arrayMethods)
       } else {
         copyAugment(value, arrayMethods, arrayKeys)
       }
+      // 对对象中的每个值都进行observe
       this.observeArray(value)
     } else {
+      // 普通对象
       this.walk(value)
     }
   }
@@ -72,6 +77,7 @@ export class Observer {
    * Observe a list of Array items.
    */
   observeArray (items: Array<any>) {
+    // 对对象中的每个值都进行observe
     for (let i = 0, l = items.length; i < l; i++) {
       observe(items[i])
     }
@@ -121,6 +127,8 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
     Object.isExtensible(value) &&
     !value._isVue
   ) {
+    // 这里的Object.isExtensible会判断对象是否可以扩展，
+    // 如果对象Object.freeze之后，对象就不可以扩展，也就不会new Observer进行双向绑定
     ob = new Observer(value)
   }
   if (asRootData && ob) {
@@ -140,28 +148,38 @@ export function defineReactive (
   shallow?: boolean
 ) {
   const dep = new Dep()
-
+  // 拿到属性的Descriptor定义，如果不可configurable，就不进行双向绑定
   const property = Object.getOwnPropertyDescriptor(obj, key)
   if (property && property.configurable === false) {
     return
   }
 
   // cater for pre-defined getter/setters
+  // 如果预先定义了getter、setter;在实际调用的属性的时候回先调用getter.call
   const getter = property && property.get
   const setter = property && property.set
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
-
+  // 递归子属性进行数据绑定
   let childOb = !shallow && observe(val)
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
       const value = getter ? getter.call(obj) : val
+      // 访问属性时，开始依赖搜集
+
+      // 这里的Dep.target是在每个组件mountComponent时创建一个以Watcher对象，Watcher调用它的get方法时将Watcher对象pushTarget，
+      // 所以Dep.target实际上是当前属性所在组件的Watcher对象(一个组件对应一个Watcher)
+      // 组件先进行mounteComponent，然后创建Watcher，Watcher执行updateComponent回调，先执行_render创建虚拟dom、再执行_update 将虚拟dom渲染真实dom
+      // 在_render时会调用属性，从而调用这里的响应式getter函数reactiveGetter
+      // Observer观察者(被观察对象)， Watcher订阅者(观察者ob发生变化会通知所有watcher去更新组件)
       if (Dep.target) {
         dep.depend()
         if (childOb) {
+          // 子属性的Ob观察者，记录父组件的Watcher订阅者 ???
+          // 这的Dep.target实际上还是父级同一个Watcher ???
           childOb.dep.depend()
           if (Array.isArray(value)) {
             dependArray(value)
@@ -187,6 +205,8 @@ export function defineReactive (
       } else {
         val = newVal
       }
+      // 设置属性时进行派发更新
+      // 这里的observe(newVal)当属性(对象)，的值发生改变时，可能新增了某些属性；所以需要重新observe
       childOb = !shallow && observe(newVal)
       dep.notify()
     }
