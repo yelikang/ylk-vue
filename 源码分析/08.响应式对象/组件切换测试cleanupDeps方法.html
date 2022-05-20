@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-26 14:38:45
  * @LastEditors: lizi
- * @LastEditTime: 2022-05-20 17:54:50
+ * @LastEditTime: 2022-05-20 19:00:40
  * @FilePath: \ylk-vue\源码分析\08.响应式对象\组件切换测试cleanupDeps方法.html
 -->
 
@@ -41,9 +41,10 @@
       methods: {
         toggle(){
           // 这里切换之后，组件会重新updateComponent，然后调用_render重新调用getter
-          // getter中会重新进行dep.depend调用Watcher中的addDep重新进行依赖搜集
+          // getter中会重新进行dep.depend调用Watcher中的addDep，对用到的属性的dep进行收集(某个属性没有调用就不会收集)
           // updateComponent完之后，对比之前的depIds与新的newDepIds，发现某些属性没有进行依赖收集(没有调用getter)
-          // 就从该属性的dep消息中心中移除掉Watcher订阅者，当下面的change改变msg时，也就不再调用updateComponent进行更新
+          // 就从该属性的dep消息中心中移除掉Watcher订阅者，当属性变更调用setter的时候，发现dep消息中心没有Watcher，就不会进行组件更新
+          // 例如当下面的change改变msg时，调用setter，发现该属性没有对应的Watcher订阅者，不会调用Watcher的update；也就不再调用updateComponent进行更新
           this.show =  false;
         },
         change(){
