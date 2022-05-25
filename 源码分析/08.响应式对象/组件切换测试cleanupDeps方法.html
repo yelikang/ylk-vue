@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-26 14:38:45
  * @LastEditors: lizi
- * @LastEditTime: 2022-05-20 19:00:40
+ * @LastEditTime: 2022-05-23 15:17:10
  * @FilePath: \ylk-vue\源码分析\08.响应式对象\组件切换测试cleanupDeps方法.html
 -->
 
@@ -51,6 +51,11 @@
           this.msg = '小红' + new Date().getTime();
         }
       },
+      watch:{
+        msg(oldVal, newVal){
+          console.log('xxx')
+        }
+      }
     });
   </script>
 </html>

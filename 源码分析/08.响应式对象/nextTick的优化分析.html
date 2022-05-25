@@ -1,0 +1,54 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-23 21:24:24
+ * @FilePath: \ylk-vue\源码分析\08.响应式对象\nextTick的优化分析.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nextTick的优化分析</title>
+  </head>
+  <body>
+    <div id="app">
+      <button @click="change">变更</button>
+
+      <div> 
+        {{msg}} {{age}}
+      </div>
+    
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data: {
+        age: 12,
+        msg:'小红'
+      },
+      methods: {
+        change(){
+          // 重复给属性复制时nextTick的优化逻辑
+
+          // 这里多次给不同的属性赋值，实际只会调用一次组件重新渲染
+          // 因为每次给属性设置新的value，会调用setter；然后Dep消息中心会notify多有的Watcher去update更新
+          // update中调用queueWatcher，queueWatcher会判断当前调度队列中是否已经有了当前组件的Watcher.id，如果有就不会再push进去
+          this.msg = '小红' + new Date().getTime();
+          this.age = '年龄' + new Date().getTime();
+        }
+      },
+      watch:{
+        msg(oldVal, newVal){
+          console.log('xxx')
+        }
+      }
+    });
+  </script>
+</html>

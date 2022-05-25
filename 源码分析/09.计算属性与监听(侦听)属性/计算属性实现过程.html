@@ -1,0 +1,57 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-24 15:57:02
+ * @FilePath: \ylk-vue\源码分析\09.计算属性与监听(侦听)属性\计算属性实现过程.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>computed计算属性实现过程</title>
+  </head>
+  <body>
+    <div id="app">
+      <button @click="change(1)">变更姓名</button>
+      <button @click="change(2)">变更年龄</button>
+      <div>{{c_info}}</div>
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data: {
+        age: 12,
+        msg: "小红",
+      },
+      methods: {
+        change(type) {
+          switch (type) {
+            case 1:
+              this.msg = "小红人";
+              break;
+            case 2:
+              this.age = 20;
+              break;
+            default:
+              break;
+          }
+        },
+      },
+      computed: {
+        // 1.查看computed初始化过程
+        // 2.computed依赖收集过程(里面依赖的属性会订阅当前创建的computed watcher,Dep.target)
+        // 3.computed缓存、更新调用过程
+        c_info() {
+          return this.msg + this.age;
+        },
+      },
+    });
+  </script>
+</html>

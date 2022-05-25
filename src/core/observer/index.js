@@ -44,13 +44,18 @@ export class Observer {
     this.dep = new Dep()
     this.vmCount = 0
     // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
+    // 每个响应式对象都有一个__ob__对象，指向Observer
     def(value, '__ob__', this)
     // 判断对象是否是数组
     if (Array.isArray(value)) {
       if (hasProto) {
+        // 支持原型链
         // 重写数组的push、pop、shift、unshift、splice、sort、reverse方法
+        //  function protoAugment (target, src: Object) { target.__proto__ = src } 原型链指向src;
+        // arrayMethods重写了上面的方法
         protoAugment(value, arrayMethods)
       } else {
+        // 不支持原型链，方法拷贝
         copyAugment(value, arrayMethods, arrayKeys)
       }
       // 对对象中的每个值都进行observe
@@ -180,6 +185,7 @@ export function defineReactive (
         if (childOb) {
           // 子属性的Ob观察者，记录父组件的Watcher订阅者 ???
           // 这的Dep.target实际上还是父级同一个Watcher ???
+          // 主要用于Vue.set给对象添加新的属性时能够通知渲染watcher去更新
           childOb.dep.depend()
           if (Array.isArray(value)) {
             dependArray(value)
@@ -207,6 +213,7 @@ export function defineReactive (
       }
       // 设置属性时进行派发更新
       // 这里的observe(newVal)当属性(对象)，的值发生改变时，可能新增了某些属性；所以需要重新observe
+      // shallow浅层的(为true就只监听浅层数据)
       childOb = !shallow && observe(newVal)
       dep.notify()
     }

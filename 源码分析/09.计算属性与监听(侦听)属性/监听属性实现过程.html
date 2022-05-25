@@ -1,0 +1,52 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-24 15:58:41
+ * @FilePath: \ylk-vue\源码分析\09.计算属性与监听(侦听)属性\监听属性实现过程.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>computed计算属性实现过程</title>
+  </head>
+  <body>
+    <div id="app">
+      <button @click="change()">变更姓名</button>
+      <div>{{msg}}</div>
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data: {
+        msg: "小红",
+      },
+      methods: {
+        change() {
+              this.msg = "小红人" + new Date().getTime();
+        },
+        show(){
+          console.log(arguments)
+        }
+      },
+      watch:{
+        // msg:'show',
+        
+        // 1.查看watch属性初始化过程
+        // 2.watch依赖收集过程
+        // 3.watch更新调用过程
+        // 4.watch相关属性immediate、deep、sync
+        msg(){
+          console.log(arguments)
+        }
+      }
+    });
+  </script>
+</html>

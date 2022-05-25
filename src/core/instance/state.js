@@ -58,7 +58,10 @@ export function initState (vm: Component) {
     // 没有data属性，初始化一个空对象
     observe(vm._data = {}, true /* asRootData */)
   }
+  // 初始化computed计算属性
   if (opts.computed) initComputed(vm, opts.computed)
+  // 初始化watch监听(侦听)属性
+  // nativeWatch = ({}).watch 为undefined
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch)
   }
@@ -172,6 +175,8 @@ const computedWatcherOptions = { lazy: true }
 
 function initComputed (vm: Component, computed: Object) {
   // $flow-disable-line
+  // 这里的watchers 与vm._computedWatchers指向同一个对象；
+  // 会通过computed的多个key缓存多个watcher
   const watchers = vm._computedWatchers = Object.create(null)
   // computed properties are just getters during SSR
   const isSSR = isServerRendering()
@@ -202,6 +207,7 @@ function initComputed (vm: Component, computed: Object) {
     if (!(key in vm)) {
       defineComputed(vm, key, userDef)
     } else if (process.env.NODE_ENV !== 'production') {
+      // computed中定义的key键值，不能与data和props中的key相同
       if (key in vm.$data) {
         warn(`The computed property "${key}" is already defined in data.`, vm)
       } else if (vm.$options.props && key in vm.$options.props) {
@@ -358,6 +364,7 @@ export function stateMixin (Vue: Class<Component>) {
     options = options || {}
     options.user = true
     const watcher = new Watcher(vm, expOrFn, cb, options)
+    // 配置了immediate，就立即执行一次watch中的handler回调函数
     if (options.immediate) {
       try {
         cb.call(vm, watcher.value)

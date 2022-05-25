@@ -34,6 +34,7 @@ function resetSchedulerState () {
 
 /**
  * Flush both queues and run the watchers.
+ * 遍历队列
  */
 function flushSchedulerQueue () {
   flushing = true
@@ -43,15 +44,22 @@ function flushSchedulerQueue () {
   // This ensures that:
   // 1. Components are updated from parent to child. (because parent is always
   //    created before the child)
+  //    组件的更新是从父到子的，因为父组件总是在子组件之前创建
+
   // 2. A component's user watchers are run before its render watcher (because
   //    user watchers are created before the render watcher)
+  //    user wathcers(用户给组件定义watch属性)在render watcher之前
+
   // 3. If a component is destroyed during a parent component's watcher run,
   //    its watchers can be skipped.
-  // id小的排在前面(父组件在前)
+  //     组件的销毁是在父组件的watcher回调中先执行时，子组件的销毁过程就可以跳过;
+
+  // id从小到大排序，id小的排在前面(父组件在前)
   queue.sort((a, b) => a.id - b.id)
 
   // do not cache length because more watchers might be pushed
   // as we run existing watchers
+  // 这里没有缓存queue的长度，是实时计算的；因为在我们执行的过程中可能会有更多的watcher会push进来
   for (index = 0; index < queue.length; index++) {
     watcher = queue[index]
     if (watcher.before) {
@@ -59,9 +67,11 @@ function flushSchedulerQueue () {
       watcher.before()
     }
     id = watcher.id
+    // 移除
     has[id] = null
     watcher.run()
     // in dev build, check and stop circular updates.
+    // 无限循环的判断(例如在watch属性中重新赋值某个属性，无限循环更新)
     if (process.env.NODE_ENV !== 'production' && has[id] != null) {
       circular[id] = (circular[id] || 0) + 1
       if (circular[id] > MAX_UPDATE_COUNT) {
@@ -134,6 +144,8 @@ function callActivatedHooks (queue) {
  */
 export function queueWatcher (watcher: Watcher) {
   const id = watcher.id
+  // 组件同一个方法内有多个属性变更,会多次执行queueWatcher方法
+  // 这里根据id判断是否存在，保证同一个Watcher只会被push一次
   if (has[id] == null) {
     has[id] = true
     if (!flushing) {
@@ -141,6 +153,8 @@ export function queueWatcher (watcher: Watcher) {
     } else {
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
+      // 如果组件正在flushing，而当前又有新的组件queueWatcher新的watcher进来，
+      // 就依次向前找比当前watcher的id小的(id大于就一直往前)，然后插入
       let i = queue.length - 1
       while (i > index && queue[i].id > watcher.id) {
         i--

@@ -82,6 +82,7 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
 
 export function nextTick (cb?: Function, ctx?: Object) {
   let _resolve
+  // push一个匿名的回调函数，会掉函数内使用try.catch去执行回调;保证即使回调出错也不至于程序奔溃
   callbacks.push(() => {
     if (cb) {
       try {

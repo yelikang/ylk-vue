@@ -50,7 +50,10 @@ export default class Watcher {
     isRenderWatcher?: boolean
   ) {
     this.vm = vm
-    // 判断是否渲染watcher
+    // 判断是否渲染watcher(watcher分为渲染 render watcher、user watcher、computed watcher
+    // render watcher 在mountComponent时出创建，主要用来更新组件视图
+    // user watcher   用户在组件中自定义的watch属性，在initState初始化组件数据时，调用initWatch中的createWatcher、调用vm.$watcher创建user watcher
+    // computed watcher 用户在组建中定义的computed属性，lazy为true代表的是computed watcher
     if (isRenderWatcher) {
       // 下划线watcher代表是渲染watcher(页面渲染内容，另外还有计算watcher等($watch))
       vm._watcher = this
@@ -92,6 +95,7 @@ export default class Watcher {
         )
       }
     }
+    // computed属性创建的watcher这里的lazy会为true，不会直接求值；只有真实调用计算属性时才会调用
     this.value = this.lazy
       ? undefined
       : this.get()
@@ -116,6 +120,8 @@ export default class Watcher {
       // "touch" every property so they are all tracked as
       // dependencies for deep watching
       if (this.deep) {
+        // deep属性，在组件watch属性中定义某个属性的深层监听
+        // 递归对象的所有深层属性，调用属性收集监听；当深层属性改变时也会进行回调
         traverse(value)
       }
       popTarget()
@@ -206,6 +212,7 @@ export default class Watcher {
         // set new value
         const oldValue = this.value
         this.value = value
+        // 判断是不是用户watcher(通过watch属性创建的watcher)
         if (this.user) {
           try {
             this.cb.call(this.vm, value, oldValue)

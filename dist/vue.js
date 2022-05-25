@@ -1167,6 +1167,7 @@
 
   function nextTick (cb, ctx) {
     var _resolve;
+    // push一个匿名的回调函数，会掉函数内使用try.catch去执行回调;保证即使回调出错也不至于程序奔溃
     callbacks.push(function () {
       if (cb) {
         try {
@@ -1372,6 +1373,7 @@
       var args = [], len = arguments.length;
       while ( len-- ) args[ len ] = arguments[ len ];
 
+      // 调用数组原始方法
       var result = original.apply(this, args);
       var ob = this.__ob__;
       var inserted;
@@ -1384,6 +1386,7 @@
           inserted = args.slice(2);
           break
       }
+      // 对于插入的对象进行双向数据绑定，变成响应式
       if (inserted) { ob.observeArray(inserted); }
       // notify change
       ob.dep.notify();
@@ -1416,13 +1419,18 @@
     this.dep = new Dep();
     this.vmCount = 0;
     // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
+    // 每个响应式对象都有一个__ob__对象，指向Observer
     def(value, '__ob__', this);
     // 判断对象是否是数组
     if (Array.isArray(value)) {
       if (hasProto) {
+        // 支持原型链
         // 重写数组的push、pop、shift、unshift、splice、sort、reverse方法
+        //function protoAugment (target, src: Object) { target.__proto__ = src } 原型链指向src;
+        // arrayMethods重写了上面的方法
         protoAugment(value, arrayMethods);
       } else {
+        // 不支持原型链，方法拷贝
         copyAugment(value, arrayMethods, arrayKeys);
       }
       // 对对象中的每个值都进行observe
@@ -1551,6 +1559,7 @@
           if (childOb) {
             // 子属性的Ob观察者，记录父组件的Watcher订阅者 ???
             // 这的Dep.target实际上还是父级同一个Watcher ???
+            // 主要用于Vue.set给对象添加新的属性时能够通知渲染watcher去更新
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray(value);
@@ -1578,6 +1587,7 @@
         }
         // 设置属性时进行派发更新
         // 这里的observe(newVal)当属性(对象)，的值发生改变时，可能新增了某些属性；所以需要重新observe
+        // shallow浅层的(为true就只监听浅层数据)
         childOb = !shallow && observe(newVal);
         dep.notify();
       }
@@ -3123,10 +3133,12 @@
     // update $attrs and $listeners hash
     // these are also reactive so they may trigger child update if the child
     // used them during render
+    // 更新子组件attrs
     vm.$attrs = parentVnode.data.attrs || emptyObject;
+    // 更新子组件listeners
     vm.$listeners = listeners || emptyObject;
 
-    // update props
+    // update props 更新子组件props
     if (propsData && vm.$options.props) {
       toggleObserving(false);
       var props = vm._props;
@@ -3134,6 +3146,7 @@
       for (var i = 0; i < propKeys.length; i++) {
         var key = propKeys[i];
         var propOptions = vm.$options.props; // wtf flow?
+        // 子props更新
         props[key] = validateProp(key, propOptions, propsData, vm);
       }
       toggleObserving(true);
@@ -3241,6 +3254,7 @@
 
   /**
    * Flush both queues and run the watchers.
+   * 遍历队列
    */
   function flushSchedulerQueue () {
     flushing = true;
@@ -3250,15 +3264,22 @@
     // This ensures that:
     // 1. Components are updated from parent to child. (because parent is always
     //    created before the child)
+    //    组件的更新是从父到子的，因为父组件总是在子组件之前创建
+
     // 2. A component's user watchers are run before its render watcher (because
     //    user watchers are created before the render watcher)
+    //    user wathcers(用户给组件定义watch属性)在render watcher之前
+
     // 3. If a component is destroyed during a parent component's watcher run,
     //    its watchers can be skipped.
-    // id小的排在前面(父组件在前)
+    //     组件的销毁是在父组件的watcher回调中先执行时，子组件的销毁过程就可以跳过;
+
+    // id从小到大排序，id小的排在前面(父组件在前)
     queue.sort(function (a, b) { return a.id - b.id; });
 
     // do not cache length because more watchers might be pushed
     // as we run existing watchers
+    // 这里没有缓存queue的长度，是实时计算的；因为在我们执行的过程中可能会有更多的watcher会push进来
     for (index = 0; index < queue.length; index++) {
       watcher = queue[index];
       if (watcher.before) {
@@ -3266,9 +3287,11 @@
         watcher.before();
       }
       id = watcher.id;
+      // 移除
       has[id] = null;
       watcher.run();
       // in dev build, check and stop circular updates.
+      // 无限循环的判断(例如在watch属性中重新赋值某个属性，无限循环更新)
       if (has[id] != null) {
         circular[id] = (circular[id] || 0) + 1;
         if (circular[id] > MAX_UPDATE_COUNT) {
@@ -3330,6 +3353,8 @@
    */
   function queueWatcher (watcher) {
     var id = watcher.id;
+    // 组件同一个方法内有多个属性变更,会多次执行queueWatcher方法
+    // 这里根据id判断是否存在，保证同一个Watcher只会被push一次
     if (has[id] == null) {
       has[id] = true;
       if (!flushing) {
@@ -3337,6 +3362,8 @@
       } else {
         // if already flushing, splice the watcher based on its id
         // if already past its id, it will be run next immediately.
+        // 如果组件正在flushing，而当前又有新的组件queueWatcher新的watcher进来，
+        // 就依次向前找比当前watcher的id小的(id大于就一直往前)，然后插入
         var i = queue.length - 1;
         while (i > index && queue[i].id > watcher.id) {
           i--;
@@ -3375,7 +3402,10 @@
     isRenderWatcher
   ) {
     this.vm = vm;
-    // 判断是否渲染watcher
+    // 判断是否渲染watcher(watcher分为渲染 render watcher、user watcher、computed watcher
+    // render watcher 在mountComponent时出创建，主要用来更新组件视图
+    // user watcher 用户在组件中自定义的watch属性，在initState初始化组件数据时，调用initWatch中的createWatcher、调用vm.$watcher创建user watcher
+    // computed watcher 用户在组建中定义的computed属性，lazy为true代表的是computed watcher
     if (isRenderWatcher) {
       // 下划线watcher代表是渲染watcher(页面渲染内容，另外还有计算watcher等($watch))
       vm._watcher = this;
@@ -3415,6 +3445,7 @@
         );
       }
     }
+    // computed属性创建的watcher这里的lazy会为true，不会直接求值；只有真实调用计算属性时才会调用
     this.value = this.lazy
       ? undefined
       : this.get();
@@ -3439,6 +3470,8 @@
       // "touch" every property so they are all tracked as
       // dependencies for deep watching
       if (this.deep) {
+        // deep属性，在组件watch属性中定义某个属性的深层监听
+        // 递归对象的所有深层属性，调用属性收集监听；当深层属性改变时也会进行回调
         traverse(value);
       }
       popTarget();
@@ -3529,6 +3562,7 @@
         // set new value
         var oldValue = this.value;
         this.value = value;
+        // 判断是不是用户watcher(通过watch属性创建的watcher)
         if (this.user) {
           try {
             this.cb.call(this.vm, value, oldValue);
@@ -3613,7 +3647,10 @@
       // 没有data属性，初始化一个空对象
       observe(vm._data = {}, true /* asRootData */);
     }
+    // 初始化computed计算属性
     if (opts.computed) { initComputed(vm, opts.computed); }
+    // 初始化watch监听(侦听)属性
+    // nativeWatch = ({}).watch 为undefined
     if (opts.watch && opts.watch !== nativeWatch) {
       initWatch(vm, opts.watch);
     }
@@ -3727,6 +3764,8 @@
 
   function initComputed (vm, computed) {
     // $flow-disable-line
+    // 这里的watchers 与vm._computedWatchers指向同一个对象；
+    // 会通过computed的多个key缓存多个watcher
     var watchers = vm._computedWatchers = Object.create(null);
     // computed properties are just getters during SSR
     var isSSR = isServerRendering();
@@ -3757,6 +3796,7 @@
       if (!(key in vm)) {
         defineComputed(vm, key, userDef);
       } else {
+        // computed中定义的key键值，不能与data和props中的key相同
         if (key in vm.$data) {
           warn(("The computed property \"" + key + "\" is already defined in data."), vm);
         } else if (vm.$options.props && key in vm.$options.props) {
@@ -3912,6 +3952,7 @@
       options = options || {};
       options.user = true;
       var watcher = new Watcher(vm, expOrFn, cb, options);
+      // 配置了immediate，就立即执行一次watch中的handler回调函数
       if (options.immediate) {
         try {
           cb.call(vm, watcher.value);
@@ -5195,8 +5236,8 @@
 
       // set parent vnode. this allows render functions to have access
       // to the data on the placeholder node.
-      // 占位vnode: 父级占位$vnode(例如创建的 vue-component-1-children 占位$vnode;可以理解为某个子组件未解析时的vnode)
-      // 渲染vnode: 这里的vnode则是将子组件实际解析生成的vnode,可以理解为某个子组件解析内容后的vnode
+      // 占位vnode($vnode): 父级占位$vnode(例如创建的 vue-component-1-children 占位$vnode;可以理解为某个子组件未解析时的vnode)
+      // 渲染vnode(_vnode): 这里的vnode则是将子组件实际解析生成的vnode,可以理解为某个子组件解析内容后的vnode
       vm.$vnode = _parentVnode;
       // render self
       var vnode;
@@ -5696,13 +5737,18 @@
     this.dep = new Dep();
     this.vmCount = 0;
     // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
+    // 每个响应式对象都有一个__ob__对象，指向Observer
     def(value, '__ob__', this);
     // 判断对象是否是数组
     if (Array.isArray(value)) {
       if (hasProto) {
+        // 支持原型链
         // 重写数组的push、pop、shift、unshift、splice、sort、reverse方法
+        //function protoAugment (target, src: Object) { target.__proto__ = src } 原型链指向src;
+        // arrayMethods重写了上面的方法
         protoAugment$1(value, arrayMethods);
       } else {
+        // 不支持原型链，方法拷贝
         copyAugment$1(value, arrayMethods, arrayKeys$1);
       }
       // 对对象中的每个值都进行observe
@@ -5831,6 +5877,7 @@
           if (childOb) {
             // 子属性的Ob观察者，记录父组件的Watcher订阅者 ???
             // 这的Dep.target实际上还是父级同一个Watcher ???
+            // 主要用于Vue.set给对象添加新的属性时能够通知渲染watcher去更新
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray$1(value);
@@ -5858,6 +5905,7 @@
         }
         // 设置属性时进行派发更新
         // 这里的observe(newVal)当属性(对象)，的值发生改变时，可能新增了某些属性；所以需要重新observe
+        // shallow浅层的(为true就只监听浅层数据)
         childOb = !shallow && observe$1(newVal);
         dep.notify();
       }
@@ -7014,12 +7062,12 @@
 
       var i;
       var data = vnode.data;
-      // 组件节点
+      // 组件节点(调用prepatch，执行updateChildComponent对子组件进行更新，如果组件的属性传递给了子组件的props，那么会修改子组件的props，从而触发更新)
       if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
         i(oldVnode, vnode);
       }
 
-      // 获取新旧节点的children子节点
+      // 获取新旧节点的children子节点(组件节点的children为空)
       var oldCh = oldVnode.children;
       var ch = vnode.children;
 
@@ -7202,12 +7250,13 @@
       } else {
         // new Vue({el:'#app'}) 初始化的时候会走这里的逻辑
         var isRealElement = isDef(oldVnode.nodeType);
-        // diff算法vnode虚拟dom对比更新
+        // 新旧节点是相同的节点
         if (!isRealElement && sameVnode(oldVnode, vnode)) {
           // 旧节点不是真实元素(是虚拟vnode)，且新旧节点是同一个节点，则进行patch
           // patch existing root node
           patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly);
         } else {
+          // 新旧节点不是相同的节点(例如 div 变成了 h1)
           if (isRealElement) {
             // mounting to a real element
             // check if this is server-rendered content and if we can perform
@@ -7240,7 +7289,7 @@
           // 获取节点的真实元素
           // vnode上挂载的elm指向的就是真实的dom
           var oldElm = oldVnode.elm;
-          // 真实的父级dom
+          // 真实的父级dom(父的挂载节点)
           var parentElm = nodeOps.parentNode(oldElm);
 
           // create new node
@@ -7255,8 +7304,9 @@
             nodeOps.nextSibling(oldElm)
           );
 
-          // update parent placeholder node element, recursively
+          // update parent placeholder node element, recursively(递归)
           if (isDef(vnode.parent)) {
+            // 父的占位节点存在
             var ancestor = vnode.parent;
             var patchable = isPatchable(vnode);
             while (ancestor) {
@@ -7285,7 +7335,7 @@
             }
           }
 
-          // destroy old node
+          // destroy old node(销毁旧的节点)
           if (isDef(parentElm)) {
             removeVnodes(parentElm, [oldVnode], 0, 0);
           } else if (isDef(oldVnode.tag)) {

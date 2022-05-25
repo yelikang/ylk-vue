@@ -245,10 +245,12 @@ export function updateChildComponent (
   // update $attrs and $listeners hash
   // these are also reactive so they may trigger child update if the child
   // used them during render
+  // 更新子组件attrs
   vm.$attrs = parentVnode.data.attrs || emptyObject
+  // 更新子组件listeners
   vm.$listeners = listeners || emptyObject
 
-  // update props
+  // update props 更新子组件props
   if (propsData && vm.$options.props) {
     toggleObserving(false)
     const props = vm._props
@@ -256,6 +258,7 @@ export function updateChildComponent (
     for (let i = 0; i < propKeys.length; i++) {
       const key = propKeys[i]
       const propOptions: any = vm.$options.props // wtf flow?
+      // 子props更新
       props[key] = validateProp(key, propOptions, propsData, vm)
     }
     toggleObserving(true)

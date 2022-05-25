@@ -439,7 +439,7 @@ export function createPatchFunction (backend) {
     if (process.env.NODE_ENV !== 'production') {
       checkDuplicateKeys(newCh)
     }
-
+    // 旧节点循环完 || 新节点循环完就跳出循环
     while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
       if (isUndef(oldStartVnode)) {
         oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
@@ -588,12 +588,12 @@ export function createPatchFunction (backend) {
 
     let i
     const data = vnode.data
-    // 组件节点
+    // 组件节点(调用prepatch，执行updateChildComponent对子组件进行更新，如果组件的属性传递给了子组件的props，那么会修改子组件的props，从而触发更新)
     if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
       i(oldVnode, vnode)
     }
 
-    // 获取新旧节点的children子节点
+    // 获取新旧节点的children子节点(组件节点的children为空)
     const oldCh = oldVnode.children
     const ch = vnode.children
 
@@ -776,12 +776,13 @@ export function createPatchFunction (backend) {
     } else {
       // new Vue({el:'#app'}) 初始化的时候会走这里的逻辑
       const isRealElement = isDef(oldVnode.nodeType)
-      // diff算法vnode虚拟dom对比更新
+      // 新旧节点是相同的节点
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
         // 旧节点不是真实元素(是虚拟vnode)，且新旧节点是同一个节点，则进行patch
         // patch existing root node
         patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)
       } else {
+        // 新旧节点不是相同的节点(例如 div 变成了 h1)
         if (isRealElement) {
           // mounting to a real element
           // check if this is server-rendered content and if we can perform
@@ -814,7 +815,7 @@ export function createPatchFunction (backend) {
         // 获取节点的真实元素
         // vnode上挂载的elm指向的就是真实的dom
         const oldElm = oldVnode.elm
-        // 真实的父级dom
+        // 真实的父级dom(父的挂载节点)
         const parentElm = nodeOps.parentNode(oldElm)
 
         // create new node
@@ -829,8 +830,9 @@ export function createPatchFunction (backend) {
           nodeOps.nextSibling(oldElm)
         )
 
-        // update parent placeholder node element, recursively
+        // update parent placeholder node element, recursively(递归)
         if (isDef(vnode.parent)) {
+          // 父的占位节点存在
           let ancestor = vnode.parent
           const patchable = isPatchable(vnode)
           while (ancestor) {
@@ -859,7 +861,7 @@ export function createPatchFunction (backend) {
           }
         }
 
-        // destroy old node
+        // destroy old node(销毁旧的节点)
         if (isDef(parentElm)) {
           removeVnodes(parentElm, [oldVnode], 0, 0)
         } else if (isDef(oldVnode.tag)) {
