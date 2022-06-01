@@ -1017,6 +1017,7 @@ function defineReactive (
  * already exist.
  */
 function set (target, key, val) {
+  // isPrimitive 基础类型不能设置新的属性
   if (process.env.NODE_ENV !== 'production' &&
     (isUndef(target) || isPrimitive(target))
   ) {
@@ -1039,11 +1040,14 @@ function set (target, key, val) {
     );
     return val
   }
+  // 如果当前对象不是响应式对象就直接赋值
   if (!ob) {
     target[key] = val;
     return val
   }
+  // 当前对象是响应式对象,对新的属性进行数据侦听
   defineReactive(ob.value, key, val);
+  // 手动调用组件更新
   ob.dep.notify();
   return val
 }

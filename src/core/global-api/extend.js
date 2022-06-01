@@ -30,7 +30,7 @@ export function initExtend (Vue: GlobalAPI) {
       validateComponentName(name)
     }
 
-    // 子构造函数
+    // 子构造函数(子构造函数构造出来的实例，都会包含extendOptions属性，以及从Super(vue)上继承的属性)
     const Sub = function VueComponent (options) {
       this._init(options)
     }
@@ -39,7 +39,7 @@ export function initExtend (Vue: GlobalAPI) {
     // 构造函数指回自己
     Sub.prototype.constructor = Sub
     Sub.cid = cid++
-    // 这里合并的是Vue.options上的属性 + 组件自身的options内容
+    // 这里合并的是Vue.options上的属性 + 组件自身的options内容(全局的mixins等会在这里合并进去)
     Sub.options = mergeOptions(
       // Vue.options上的属性
       Super.options,

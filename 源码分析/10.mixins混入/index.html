@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mixins混入</title>
+  </head>
+  <body>
+    <div id="app">
+      <children/>
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    // mixin实际上是把里面配置的options内容合并到Vue.options上，注意这里是循环赋值，而不是赋值引用；所以尽量不要使用全局的mixin
+
+    //   Vue.mixin = function (mixin: Object) {
+    //   this.options = mergeOptions(this.options, mixin)
+    //   return this
+    // }
+
+    // 组件中的mixins内容是在组件创建构造函数Vue.extend的时候，通过mergeOptions合并到了组件钩子函数的options上，
+    // 组件创建实例时会将构造函数上的options赋值到当前组件的$options上
+
+    // _init中调用initInternalComponent初始化内部组件实例，执行const opts = vm.$options = Object.create(vm.constructor.options)
+
+    Vue.mixin({
+      data(){
+        return {
+          globalMixins:{
+            name:'全局名字'
+          }
+        }
+      }
+    })
+    new Vue({
+      el: "#app",
+      components: {
+        children: {
+          template: "<div><p>{{globalMixins.name}}</p><p>{{scoped.name}}</p><a @click='change'>改变</a></div>",
+          data() {
+            return {
+              scoped: {
+                name:'局部名字'
+              }
+            };
+          },
+          methods:{
+            change(){
+              this.globalMixins.name ='局部组件2'
+            }
+          }
+        }
+      }
+    });
+  </script>
+</html>

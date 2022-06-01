@@ -41,7 +41,7 @@ methodsToPatch.forEach(function (method) {
     // 对于插入的对象进行双向数据绑定，变成响应式
     if (inserted) ob.observeArray(inserted)
     // notify change
-    // 手动通知watcher更新
+    // 当前数据对象的消息收集器dep,手动通知watcher更新
     ob.dep.notify()
     return result
   })

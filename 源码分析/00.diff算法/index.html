@@ -30,12 +30,14 @@
 
 
       <!-- <h3>3.循环子组件</h3> -->
-      <!-- 这种删除不正常，因为组件diff是不关心子组件内部实现的(注意是不关心子组件，不是子元素=>因为组件的children都是undefined，没法进行内部children的patchVnode)；
+      <!-- 这里用index做为key删除就不正常，因为组件diff是不关心子组件内部实现的(注意是不关心子组件，不是子元素=>因为组件的children都是undefined，没法进行内部children的patchVnode)；
         上面的正常的li标签的循环和删除，因为子元素都是真实dom，所以有children，会一直进行children的patchVnode对比
         所以发现组件没有变化、直接复用原来的；不管子组件内部的内容变化 
         而加上key之后发现不同，只复用相同key的组件，所以删除不会出错
       -->
-      <children v-for="(item, index) in list3":text="item.name" :key="item.id" @delete="_remove3(index)">
+      <!-- <children v-for="(item, index) in list3":text="item.name" :key="item.id" @delete="_remove3(index)"> -->
+
+      <children v-for="(item, index) in list3":text="item.name" :key="index" @delete="_remove3(index)">
 
       <!-- <h3>4.节点复用</h3>-->
       <!-- <a @click="_reverse">点击倒序</a>

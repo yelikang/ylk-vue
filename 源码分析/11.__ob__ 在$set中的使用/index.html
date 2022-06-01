@@ -3,8 +3,8 @@
  * @Autor: lizi
  * @Date: 2022-04-22 17:16:53
  * @LastEditors: lizi
- * @LastEditTime: 2022-06-01 07:38:38
- * @FilePath: \ylk-vue\源码分析\01.初始化\index.html
+ * @LastEditTime: 2022-06-01 18:28:27
+ * @FilePath: \ylk-vue\源码分析\11.__ob__ 在$set中的使用\index.html
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -12,38 +12,23 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>初始化</title>
+    <title>__ob__ vs $set</title>
   </head>
   <body>
     <div id="app">
-      {{msg}}
+      {{msg}} {{info.name}} {{freezeData.name}}
       <a @click="click">改变</a>
-      <test></test>
     </div>
   </body>
   <script src="../../dist/vue.js"></script>
   <script>
     new Vue({
       el: "#app",
-      components: {
-        test: {
-          template: "<div>子组件</div>",
-          data() {
-            return {
-              name: "Tomi",
-            };
-          },
-          mounted() {
-            console.log("children mounted");
-          },
-        },
-      },
       data() {
         return {
-          msg: "哈哈哈",
-          job: {
-            title: "攻城狮",
-          },
+          msg: "哈哈",
+          info: {},
+          freezeData: Object.freeze({}),
         };
       },
       beforeCreate() {
@@ -54,8 +39,18 @@
       },
       methods: {
         click() {
-          this.msg = "嘿嘿嘿";
+          // this.msg = "嘿嘿嘿";
+          // 报错，因为this.msg是基础数据类型，不能set新的属性
           // this.$set(this.msg,'age',12)
+
+          // 响应式数据设置新属性(defineReactive的时候通过childOb的创建设置了__ob__对象)
+          this.$set(this.info, "name", "叶立康");
+          console.log(this.info)
+
+          // 非响应式数据设置新属性(没有__ob__属性)
+          let a = {}
+          this.$set(a, "name", "叶立康");
+          console.log(a)
         },
       },
     });
