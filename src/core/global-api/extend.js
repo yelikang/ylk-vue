@@ -16,6 +16,7 @@ export function initExtend (Vue: GlobalAPI) {
   /**
    * Class inheritance
    */
+  // 注意理解这里是创建组件的构造函数，并不是实例化组件；new Sub才是实例化组件，并调用this._init函数
   Vue.extend = function (extendOptions: Object): Function {
     extendOptions = extendOptions || {}
     const Super = this
