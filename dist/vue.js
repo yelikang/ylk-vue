@@ -1389,6 +1389,7 @@
       // 对于插入的对象进行双向数据绑定，变成响应式
       if (inserted) { ob.observeArray(inserted); }
       // notify change
+      // 当前数据对象的消息收集器dep,手动通知watcher更新
       ob.dep.notify();
       return result
     });
@@ -1416,10 +1417,11 @@
    */
   var Observer = function Observer (value) {
     this.value = value;
+    // 这个dep会在defineReactive的
     this.dep = new Dep();
     this.vmCount = 0;
     // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
-    // 每个响应式对象都有一个__ob__对象，指向Observer
+    // 每个响应式对象都有一个__ob__对象，指向Observer；只有对象类型才会定义？？？
     def(value, '__ob__', this);
     // 判断对象是否是数组
     if (Array.isArray(value)) {
@@ -1493,10 +1495,12 @@
    * or the existing observer if the value already has one.
    */
   function observe (value, asRootData) {
+    // 只有value值为对象类型才会有observe过程，才会有__ob__对象
     if (!isObject(value) || value instanceof VNode) {
       return
     }
     var ob;
+    // 有__ob__属性时(在Observer实例化时定义的)，表名对象已经被侦测过，直接返回__ob__
     if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
       ob = value.__ob__;
     } else if (
@@ -1508,6 +1512,7 @@
     ) {
       // 这里的Object.isExtensible会判断对象是否可以扩展，
       // 如果对象Object.freeze之后，对象就不可以扩展，也就不会new Observer进行双向绑定
+      // 这里返回Observer的同时，会给value对象原型上增加__ob__对象( def(value, '__ob__', this) )，代表已经是响应对象；避免重复侦测
       ob = new Observer(value);
     }
     if (asRootData && ob) {
@@ -1557,7 +1562,13 @@
         if (Dep.target) {
           dep.depend();
           if (childOb) {
-            // 子属性的Ob观察者，记录父组件的Watcher订阅者 ???
+            // 子属性的Ob观察者，记录父组件的Watcher订阅者 ??? 否
+
+            // 这里的childOb实际上是对value值的观察者，但只有value是对象才会有childOb；
+            // 并且与这里每个属性new 出来的dep(用于set时赋值更新)收集统一同样的watcher，实际上就是 value.__ob__.dep.depend (用于一些对象push、$set、$delete等api层面的手动更新)
+            // 以便后续操作某个data中的对象(例如对象是个数组[1,2,3]，或者是个对象{name:'',age})
+            // 对其中的数组进行push、对对象进行属性的$set/$delete时，能够拿到__ob__对象进行视图更新；直接进行赋值更新会调用这里的set去notify
+
             // 这的Dep.target实际上还是父级同一个Watcher ???
             // 主要用于Vue.set给对象添加新的属性时能够通知渲染watcher去更新
             childOb.dep.depend();
@@ -5477,7 +5488,7 @@
         validateComponentName(name);
       }
 
-      // 子构造函数
+      // 子构造函数(子构造函数构造出来的实例，都会包含extendOptions属性，以及从Super(vue)上继承的属性)
       var Sub = function VueComponent (options) {
         this._init(options);
       };
@@ -5486,7 +5497,7 @@
       // 构造函数指回自己
       Sub.prototype.constructor = Sub;
       Sub.cid = cid++;
-      // 这里合并的是Vue.options上的属性 + 组件自身的options内容
+      // 这里合并的是Vue.options上的属性 + 组件自身的options内容(全局的mixins等会在这里合并进去)
       Sub.options = mergeOptions(
         // Vue.options上的属性
         Super.options,
@@ -5734,10 +5745,11 @@
    */
   var Observer$1 = function Observer (value) {
     this.value = value;
+    // 这个dep会在defineReactive的
     this.dep = new Dep();
     this.vmCount = 0;
     // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
-    // 每个响应式对象都有一个__ob__对象，指向Observer
+    // 每个响应式对象都有一个__ob__对象，指向Observer；只有对象类型才会定义？？？
     def(value, '__ob__', this);
     // 判断对象是否是数组
     if (Array.isArray(value)) {
@@ -5811,10 +5823,12 @@
    * or the existing observer if the value already has one.
    */
   function observe$1 (value, asRootData) {
+    // 只有value值为对象类型才会有observe过程，才会有__ob__对象
     if (!isObject(value) || value instanceof VNode) {
       return
     }
     var ob;
+    // 有__ob__属性时(在Observer实例化时定义的)，表名对象已经被侦测过，直接返回__ob__
     if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer$1) {
       ob = value.__ob__;
     } else if (
@@ -5826,6 +5840,7 @@
     ) {
       // 这里的Object.isExtensible会判断对象是否可以扩展，
       // 如果对象Object.freeze之后，对象就不可以扩展，也就不会new Observer进行双向绑定
+      // 这里返回Observer的同时，会给value对象原型上增加__ob__对象( def(value, '__ob__', this) )，代表已经是响应对象；避免重复侦测
       ob = new Observer$1(value);
     }
     if (asRootData && ob) {
@@ -5875,7 +5890,13 @@
         if (Dep.target) {
           dep.depend();
           if (childOb) {
-            // 子属性的Ob观察者，记录父组件的Watcher订阅者 ???
+            // 子属性的Ob观察者，记录父组件的Watcher订阅者 ??? 否
+
+            // 这里的childOb实际上是对value值的观察者，但只有value是对象才会有childOb；
+            // 并且与这里每个属性new 出来的dep(用于set时赋值更新)收集统一同样的watcher，实际上就是 value.__ob__.dep.depend (用于一些对象push、$set、$delete等api层面的手动更新)
+            // 以便后续操作某个data中的对象(例如对象是个数组[1,2,3]，或者是个对象{name:'',age})
+            // 对其中的数组进行push、对对象进行属性的$set/$delete时，能够拿到__ob__对象进行视图更新；直接进行赋值更新会调用这里的set去notify
+
             // 这的Dep.target实际上还是父级同一个Watcher ???
             // 主要用于Vue.set给对象添加新的属性时能够通知渲染watcher去更新
             childOb.dep.depend();
@@ -6913,7 +6934,7 @@
       {
         checkDuplicateKeys(newCh);
       }
-
+      // 旧节点循环完 || 新节点循环完就跳出循环
       while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
         if (isUndef(oldStartVnode)) {
           oldStartVnode = oldCh[++oldStartIdx]; // Vnode has been moved left

@@ -1,0 +1,50 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-22 17:16:53
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-06-09 20:59:29
+ * @FilePath: \ylk-vue\源码分析\12.v-once优化\index.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>v-once</title>
+  </head>
+  <body>
+    <div id="app">
+      <span v-once>{{message}}</span>
+      <a @click="click">改变</a>
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data() {
+        return {
+          message: "哈哈",
+        };
+      },
+      mounted() {
+      },
+      methods: {
+        click() {
+          // 元素上指定v-once,在生成组件的render函数时(prototype.$mount)，会根据模板生成对应的render、staticRenderFns，并挂载到组件的$options上
+          // 生成的render函数中，对于v-once节点会调用_m(实际调用renderStatic，从而调用$options.staticRenderFns[指定的index])去生成子节点；
+          // 调用render构建组件vnode时，发现有_m生成子节点的逻辑，就会去调用renderStatic，从而调用$options.staticRenderFns生成vnode，并且缓存在组件实例vm._staticTrees上，挂载在vm._staticTrees上
+
+          // v-once指令指定的元素，会调用_m(实际上是renderStatic方法生成vnode虚拟节点)，
+          // 同时会在内存中根据索引生成_staticTrees(挂载在vm._staticTrees上)，用来缓存当前组件中的静态节点
+          // 第二次更新时，会检查缓存中是否已经有了该节点，如果有直接返回；
+          // diff算法对比时会发现是同一个vnode节点，从而不去更新
+          this.message = '哈哈2'
+        },
+      },
+    });
+  </script>
+</html>

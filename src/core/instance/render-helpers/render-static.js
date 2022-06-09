@@ -15,6 +15,7 @@ export function renderStatic (
     return tree
   }
   // otherwise, render a fresh tree.
+  // 每次生成的静态vnode，会缓存在每个组件实例vm._staticTrees上，下次组件更新时直接从cache中获取
   tree = cached[index] = this.$options.staticRenderFns[index].call(
     this._renderProxy,
     null,
