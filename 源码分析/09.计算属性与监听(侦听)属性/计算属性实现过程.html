@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-26 14:38:45
  * @LastEditors: lizi
- * @LastEditTime: 2022-05-24 15:57:02
+ * @LastEditTime: 2022-06-13 22:32:02
  * @FilePath: \ylk-vue\源码分析\09.计算属性与监听(侦听)属性\计算属性实现过程.html
 -->
 
@@ -19,6 +19,7 @@
     <div id="app">
       <button @click="change(1)">变更姓名</button>
       <button @click="change(2)">变更年龄</button>
+      <div>{{msg}}</div>
       <div>{{c_info}}</div>
     </div>
   </body>
@@ -46,8 +47,14 @@
       },
       computed: {
         // 1.查看computed初始化过程
+        // defineComputed 对computed计算属性的key进行代理劫持，读取计算属性，实际会调用computedGetter
+
         // 2.computed依赖收集过程(里面依赖的属性会订阅当前创建的computed watcher,Dep.target)
         // 3.computed缓存、更新调用过程
+
+        // 读取计算属性的时候，会调用watcher的evaluate，执行wather的get方法，get中pushTarget将当前computed watch激活为Dep.target
+        // 这个时候执行computed属性对应的function，如果读取其它属性，其它属性的dep消息中心就会搜集computed watcher的依赖
+        // 当其它属性变更时也会通知computed wather去update，将dirty设置为true，再次读取计算属性时调用computedGetter，发现dirty变为true，从而再次执行evaluate
         c_info() {
           return this.msg + this.age;
         },

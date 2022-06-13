@@ -183,6 +183,7 @@ function initComputed (vm: Component, computed: Object) {
 
   for (const key in computed) {
     const userDef = computed[key]
+    // 这里的getter就是compute属性对应的function
     const getter = typeof userDef === 'function' ? userDef : userDef.get
     if (process.env.NODE_ENV !== 'production' && getter == null) {
       warn(
@@ -205,6 +206,7 @@ function initComputed (vm: Component, computed: Object) {
     // component prototype. We only need to define computed properties defined
     // at instantiation here.
     if (!(key in vm)) {
+      // 计算属性的key没有在vm上定义(没有在props、data上定义)
       defineComputed(vm, key, userDef)
     } else if (process.env.NODE_ENV !== 'production') {
       // computed中定义的key键值，不能与data和props中的key相同
@@ -224,6 +226,7 @@ export function defineComputed (
 ) {
   const shouldCache = !isServerRendering()
   if (typeof userDef === 'function') {
+    // 页面调用计算属性时,会调用这里createComputedGetter(key)返回的computedGetter函数
     sharedPropertyDefinition.get = shouldCache
       ? createComputedGetter(key)
       : createGetterInvoker(userDef)
@@ -245,14 +248,28 @@ export function defineComputed (
       )
     }
   }
+  // 组件实例vm上定义compute的每个属性的key, 这样就模板中就能直接访问 this.c_info等计算属性
   Object.defineProperty(target, key, sharedPropertyDefinition)
 }
 
 function createComputedGetter (key) {
+  // 调用计算属性实际会调用这里的computedGetter
   return function computedGetter () {
     const watcher = this._computedWatchers && this._computedWatchers[key]
     if (watcher) {
+      // new Watcher时 this.dirty = this.lazy
+      // 第一次执行时dirty为true,会执行evalute、
+      // 第二次(第二个地方)调用时dirty为false，就不会再执行对应的getter函数
+      // 当对应的computed 属性中依赖的其它属性变更时会通知Dep消息中心notify通知所有watcher去update，update中又会把dirty设置为true，从而再次进行getter调用获取最新值
       if (watcher.dirty) {
+        // evalute中执行:
+        // this.value = this.get()  调用compute key对应的getter函数
+        // this.dirty = false
+
+        // this.get中会把当前计算 watcher pushTarget，再去调用这里的getter时，
+        // 如果读取到其它属性，其它属性的消息中心dep会进行依赖收集(dep.depend),收集当前的computed watcher
+        // 当相关的其它属性变更时，便通知computed watcher去update(这里主要是将dirty 设置为true)
+        // 页面再次调用computed 属性时，发现dirty又变为true,就会再次执行evaluate去执行getter的内容
         watcher.evaluate()
       }
       if (Dep.target) {

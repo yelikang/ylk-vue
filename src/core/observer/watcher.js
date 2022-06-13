@@ -186,6 +186,7 @@ export default class Watcher {
   update () {
     /* istanbul ignore else */
     if (this.lazy) {
+      // computed watcher 计算wathcer的更新只是将dirty设置为true,页面调用计算属性时再执行evaluate获取真的值
       this.dirty = true
     } else if (this.sync) {
       this.run()
@@ -230,6 +231,7 @@ export default class Watcher {
    * Evaluate the value of the watcher.
    * This only gets called for lazy watchers.
    */
+  // 专门为lazy watchers(compute watcher)
   evaluate () {
     this.value = this.get()
     this.dirty = false
