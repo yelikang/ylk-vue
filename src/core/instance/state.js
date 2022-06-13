@@ -272,6 +272,9 @@ function createComputedGetter (key) {
         // 页面再次调用computed 属性时，发现dirty又变为true,就会再次执行evaluate去执行getter的内容
         watcher.evaluate()
       }
+      // 这里的Dep.target应该为computed watcher的上级watcher(渲染watcher)，因为watcher.get执行完之后会popTarget
+      // computed计算watcher中依赖的所有属性，都收集计算watcher的上级渲染watcher
+      // 当这些依赖的属性发生变更的时候，通知上级渲染watcher去update，从而再次调用计算属性
       if (Dep.target) {
         watcher.depend()
       }

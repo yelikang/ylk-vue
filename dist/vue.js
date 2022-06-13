@@ -1760,6 +1760,7 @@
       // merged result of both functions... no need to
       // check if parentVal is a function here because
       // it has to be a function to pass previous merges.
+      // 组件initState，调用initData是会调用合并
       return function mergedDataFn () {
         return mergeData(
           typeof childVal === 'function' ? childVal.call(this, this) : childVal,
@@ -3547,6 +3548,7 @@
   Watcher.prototype.update = function update () {
     /* istanbul ignore else */
     if (this.lazy) {
+      // computed watcher 计算wathcer的更新只是将dirty设置为true,页面调用计算属性时再执行evaluate获取真的值
       this.dirty = true;
     } else if (this.sync) {
       this.run();
@@ -3591,6 +3593,7 @@
    * Evaluate the value of the watcher.
    * This only gets called for lazy watchers.
    */
+  // 专门为lazy watchers(compute watcher)
   Watcher.prototype.evaluate = function evaluate () {
     this.value = this.get();
     this.dirty = false;
@@ -3783,6 +3786,7 @@
 
     for (var key in computed) {
       var userDef = computed[key];
+      // 这里的getter就是compute属性对应的function
       var getter = typeof userDef === 'function' ? userDef : userDef.get;
       if (getter == null) {
         warn(
@@ -3805,6 +3809,7 @@
       // component prototype. We only need to define computed properties defined
       // at instantiation here.
       if (!(key in vm)) {
+        // 计算属性的key没有在vm上定义(没有在props、data上定义)
         defineComputed(vm, key, userDef);
       } else {
         // computed中定义的key键值，不能与data和props中的key相同
@@ -3824,6 +3829,7 @@
   ) {
     var shouldCache = !isServerRendering();
     if (typeof userDef === 'function') {
+      // 页面调用计算属性时,会调用这里createComputedGetter(key)返回的computedGetter函数
       sharedPropertyDefinition.get = shouldCache
         ? createComputedGetter(key)
         : createGetterInvoker(userDef);
@@ -3844,16 +3850,33 @@
         );
       };
     }
+    // 组件实例vm上定义compute的每个属性的key, 这样就模板中就能直接访问 this.c_info等计算属性
     Object.defineProperty(target, key, sharedPropertyDefinition);
   }
 
   function createComputedGetter (key) {
+    // 调用计算属性实际会调用这里的computedGetter
     return function computedGetter () {
       var watcher = this._computedWatchers && this._computedWatchers[key];
       if (watcher) {
+        // new Watcher时 this.dirty = this.lazy
+        // 第一次执行时dirty为true,会执行evalute、
+        // 第二次(第二个地方)调用时dirty为false，就不会再执行对应的getter函数
+        // 当对应的computed 属性中依赖的其它属性变更时会通知Dep消息中心notify通知所有watcher去update，update中又会把dirty设置为true，从而再次进行getter调用获取最新值
         if (watcher.dirty) {
+          // evalute中执行:
+          // this.value = this.get()  调用compute key对应的getter函数
+          // this.dirty = false
+
+          // this.get中会把当前计算 watcher pushTarget，再去调用这里的getter时，
+          // 如果读取到其它属性，其它属性的消息中心dep会进行依赖收集(dep.depend),收集当前的computed watcher
+          // 当相关的其它属性变更时，便通知computed watcher去update(这里主要是将dirty 设置为true)
+          // 页面再次调用computed 属性时，发现dirty又变为true,就会再次执行evaluate去执行getter的内容
           watcher.evaluate();
         }
+        // 这里的Dep.target应该为computed watcher的上级watcher(渲染watcher)，因为watcher.get执行完之后会popTarget
+        // computed计算watcher中依赖的所有属性，都收集计算watcher的上级渲染watcher
+        // 当这些依赖的属性发生变更的时候，通知上级渲染watcher去update，从而再次调用计算属性
         if (Dep.target) {
           watcher.depend();
         }
@@ -4331,6 +4354,7 @@
       return tree
     }
     // otherwise, render a fresh tree.
+    // 每次生成的静态vnode，会缓存在每个组件实例vm._staticTrees上，下次组件更新时直接从cache中获取
     tree = cached[index] = this.$options.staticRenderFns[index].call(
       this._renderProxy,
       null,
@@ -5474,6 +5498,7 @@
     /**
      * Class inheritance
      */
+    // 注意理解这里是创建组件的构造函数，并不是实例化组件；new Sub才是实例化组件，并调用this._init函数
     Vue.extend = function (extendOptions) {
       extendOptions = extendOptions || {};
       var Super = this;
