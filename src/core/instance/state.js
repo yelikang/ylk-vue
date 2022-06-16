@@ -91,7 +91,33 @@ function initProps (vm: Component, propsOptions: Object) {
           vm
         )
       }
+      // 这里定义子组件的vm._props 属性的所有key为响应式；同时在Vue.extend构造子组件钩子函数时有如下代码:
+
+      // if (Sub.options.props) {
+      //   initProps(Sub)
+      // }
+      // function initProps (Comp) {
+      //   const props = Comp.options.props
+      //   for (const key in props) {
+      //     proxy(Comp.prototype, `_props`, key)
+      //   }
+      // }
+      // export function proxy (target: Object, sourceKey: string, key: string) {
+      //   sharedPropertyDefinition.get = function proxyGetter () {
+      //     return this[sourceKey][key]
+      //   }
+      //   sharedPropertyDefinition.set = function proxySetter (val) {
+      //     this[sourceKey][key] = val
+      //   }
+      //   Object.defineProperty(target, key, sharedPropertyDefinition)
+      // }
+
+      // 该方法代理了组件构造函数(Sub.prototype)的原型链上的_props对象
+      // 当访问 vm[xxxPropsKey] 时，实际走proxy代理访问Sub.prototype.[xxxPropsKey]
+      // 组件实例访问props属性 this[key] 实际访问的是 this._props[key]
+      
       defineReactive(props, key, value, () => {
+        // 这里对子组件的props进行双向绑定，然后传入customSetter，在子组件对props进行修改时会在这里报错(但只能是属性的根的引用地址改变时给出提示；属性下的属性变更不会，只有直接地址改变才会)
         if (!isRoot && !isUpdatingChildComponent) {
           warn(
             `Avoid mutating a prop directly since the value will be ` +
@@ -151,6 +177,7 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 组件实例访问 this[key] 实际访问的是 this._data[key]
       proxy(vm, `_data`, key)
     }
   }
@@ -176,7 +203,7 @@ const computedWatcherOptions = { lazy: true }
 function initComputed (vm: Component, computed: Object) {
   // $flow-disable-line
   // 这里的watchers 与vm._computedWatchers指向同一个对象；
-  // 会通过computed的多个key缓存多个watcher
+  // 会通过computed的多个key缓存多个watcher(方便computedGetter中获取 计算属性的watcher)
   const watchers = vm._computedWatchers = Object.create(null)
   // computed properties are just getters during SSR
   const isSSR = isServerRendering()
@@ -206,7 +233,7 @@ function initComputed (vm: Component, computed: Object) {
     // component prototype. We only need to define computed properties defined
     // at instantiation here.
     if (!(key in vm)) {
-      // 计算属性的key没有在vm上定义(没有在props、data上定义)
+      // 计算属性的key没有在vm上定义(没有在props、data上定义)，给vm上定义计算属性，并劫持进行一些操作
       defineComputed(vm, key, userDef)
     } else if (process.env.NODE_ENV !== 'production') {
       // computed中定义的key键值，不能与data和props中的key相同
@@ -274,7 +301,7 @@ function createComputedGetter (key) {
       }
       // 这里的Dep.target应该为computed watcher的上级watcher(渲染watcher)，因为watcher.get执行完之后会popTarget
       // computed计算watcher中依赖的所有属性，都收集计算watcher的上级渲染watcher
-      // 当这些依赖的属性发生变更的时候，通知上级渲染watcher去update，从而再次调用计算属性
+      // 当这些依赖的属性发生变更的时候，通知上级渲染watcher去update，从而再次调用计算属性(防止页面没有调用相关属性不会触发组件更新)
       if (Dep.target) {
         watcher.depend()
       }
@@ -343,6 +370,7 @@ function createWatcher (
   if (typeof handler === 'string') {
     handler = vm[handler]
   }
+  // 通过Vue.prototype.$watch 创建一个user watcher
   return vm.$watch(expOrFn, handler, options)
 }
 
@@ -382,7 +410,9 @@ export function stateMixin (Vue: Class<Component>) {
       return createWatcher(vm, expOrFn, cb, options)
     }
     options = options || {}
+    // watcher中user属性为true代表当前watcher为 user watcher
     options.user = true
+    // 创建user watcher 传入:当前vue实例、表达式(watch的key)、回调函数(watch的function)，配置项(watch的immediate、deep等配置)
     const watcher = new Watcher(vm, expOrFn, cb, options)
     // 配置了immediate，就立即执行一次watch中的handler回调函数
     if (options.immediate) {

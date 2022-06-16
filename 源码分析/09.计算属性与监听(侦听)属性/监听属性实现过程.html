@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-26 14:38:45
  * @LastEditors: lizi
- * @LastEditTime: 2022-05-24 15:58:41
+ * @LastEditTime: 2022-06-16 16:08:31
  * @FilePath: \ylk-vue\源码分析\09.计算属性与监听(侦听)属性\监听属性实现过程.html
 -->
 
@@ -27,26 +27,54 @@
       el: "#app",
       data: {
         msg: "小红",
+        age: 12,
       },
       methods: {
         change() {
-              this.msg = "小红人" + new Date().getTime();
+          this.msg = "小红人" + new Date().getTime();
+          // this.age = 13;
         },
-        show(){
-          console.log(arguments)
-        }
+        show() {
+          console.log(arguments);
+        },
       },
-      watch:{
+      watch: {
+        // 可以指定watch的hanlder为当前vm组件实例的methods
         // msg:'show',
-        
+
+        // 可以指定多个hanlder
+        // age: [
+        //   function m1(newVal, oldVal) {
+        //     console.log("m1", newVal);
+        //   },
+        //   function m2(newVal, oldVal) {
+        //     console.log("m2", newVal);
+        //   },
+        // ],
+
         // 1.查看watch属性初始化过程
+        // initState时，通过initWatch方法对组件上的watch对象中的属性进行循环，并通过createWatcher挨个创建user watcher
+        // createWatcher实际调用 Vue.prototype.$watcher方法，创建user watcher
+        // new Watcher(vm, expOrFn, cb, options) 传入:当前vue实例、表达式(watch的key)、回调函数(watch的function)，配置项(watch的immediate、deep等配置)
+
         // 2.watch依赖收集过程
+        // new Watcher 构造函数中，判断expOrFn为string(render watcher为updateComponent、computed watcher为computed属性对应的function)
+        // 会调用 this.getter = parsePath(expOrFn)，创建getter函数；parsePath中是循环深入读取watch中key, 例如 'user.name' 最终会读取 vm.user.name
+        // 紧接着调用Watcher的get函数，调用getter.call(vm,vm)，读取vm.user.name后，name属性的消息中心就会收集当前的user watcher了
+
         // 3.watch更新调用过程
-        // 4.watch相关属性immediate、deep、sync
-        msg(){
-          console.log(arguments)
-        }
-      }
+        // 当监听的属性更新时，同时所有的watcher去更新，当然包括这里的user watcher; 在watcher的run函数中，判断wathcer为user watcher 会调用this.cb.call 的回调函数，并传入newVal、oldVal
+
+        // 4.watch相关属性immediate、deep
+        // immediate: vm.$watch时，判断immediate为true就立即执行回调函数
+        // deep：构建user watcher后，调用watcher的get方法，判断deep为true；调用traverse，读取watch对象的所有深层属性，所有属性就会都搜集当前的user watcher，更新时就会执行回调
+        // 
+
+
+        msg() {
+          console.log(arguments);
+        },
+      },
     });
   </script>
 </html>

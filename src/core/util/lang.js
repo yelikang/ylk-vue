@@ -35,8 +35,11 @@ export function parsePath (path: string): any {
   if (bailRE.test(path)) {
     return
   }
+  // 这里watch 写成 'user.name'，会转换成['user','name']
   const segments = path.split('.')
-  return function (obj) {
+  return function (obj /** obj为vm */) {
+    // 循环读取vm上的最终key 先读取 obj = vm[user]、在obj = vm[user][name]；最终返回的是vm.user.name
+    // 这里读取vm上的属性时，会收集当前user watch的依赖，所以当watch的key中的相关属性变动时，会通知这些user watch update更新；也就是执行回调函数
     for (let i = 0; i < segments.length; i++) {
       if (!obj) return
       obj = obj[segments[i]]

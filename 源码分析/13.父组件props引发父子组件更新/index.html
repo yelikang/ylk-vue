@@ -1,0 +1,148 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-22 17:16:53
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-06-16 16:47:17
+ * @FilePath: \ylk-vue\源码分析\13.父组件props引发父子组件更新\index.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>父组件props引发父子组件更新</title>
+  </head>
+  <body>
+    <div id="app">
+      <a @click="click">父级改变</a>
+      <!-- {{user.job}} -->
+      <!-- 父属性页面虽然没有显示的直接调用，但是会通过attrs传递给子组件，也可以当成一次调用；
+          所以loading也会属性的dep消息中心也会收集当前父组件的render watcher；
+          当loading改变时，会触发父组件render watcher 去updateComponent更新父组件
+
+          父组件的loading与子组件的loading属性其实是同一个data(基础类型是两个data，引用类型是同一个)，同一个dep消息中心，分别收集不同的Watcher
+
+          父组件传递的props属性与子组件接收的props共用一个Dep消息收集器；虽然子组件对props又进行了defineReactive，
+          但是父组件传递进去的attrs属性的值已经是双向绑定的了，所以判断 value 上面有 __ob__对象，就不再绑定
+          所以应该是父组件属性双向绑定创建dep消息中心时，会收集当前属性会影响哪些watcher，包括子组件的render watcher
+
+      -->
+      <children :loading="loading" :user="user"/>
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+
+    let children = {
+      props:{
+        loading:{
+          type:Boolean,
+          default: false
+        },
+        list:{
+          type: Array,
+        },
+        user:{
+          type:Object
+        }
+      },
+      data(){
+        return {
+          test: '123'
+        }
+      },
+      template:`<div>
+        <p>===子组件===</p>
+        <div>
+          <h4>基础数据类型</h4>
+          <span @click="_changeBase">变更基础类型props</span>
+        {{loading}}
+        </div>
+
+        <div>
+          <h4>数组类型</h4>
+          <span @click="_changeList">变更Array类型props
+          <li v-for="(item, index) in list"> {{item.name}}</li></span>
+        </div>
+        
+        <div>
+          <h4>对象类型</h4>
+          <span @click="_changeObj">变更Obj类型props</span>
+          {{user.job}} 
+        </div>
+        
+        
+        </div>`,
+      beforeUpdate(){
+        console.log('子组件beforeUpdate')
+      },
+      updated(){
+        console.log('子组件updated')
+      },
+      methods:{
+        _changeBase(){
+          this.loading = false;
+        },
+        _changeList(){
+
+          // this.list = [
+          //   {
+          //     name:'666'
+          //   }
+          // ]
+
+          this.list[0].name = '666'
+        },
+        _changeObj(){
+
+          // 修改props对象下的属性可以(还是会触发父的更新；所以父级传递下来的属性如果要做变更，最好是做clone后处理，减少父级的更新)，
+          // 不可以直接修改props对象的指向
+          this.user.job = '攻城狮';
+
+          // this.user = {
+          //   job:'攻城狮'
+          // }
+        }
+      }
+    }
+
+    new Vue({
+      el: "#app",
+      components:{
+        children
+      },
+      data() {
+        return {
+          loading: true,
+          list:[
+            {
+              name:'张三',
+            },{
+              name:'李四'
+            }
+          ],
+          user:{
+            job:'程序员'
+          },
+          // 定义了某个属性，子组件未接收
+          tag:'标签'
+        };
+      },
+      methods: {
+        click() {
+          // this.loading = !this.loading;
+          this.user.job = '攻城狮'
+        },
+      },
+      beforeUpdate(){
+        console.log('父组件beforeUpdate')
+      },
+      updated(){
+        console.log('父组件updated')
+      }
+    });
+  </script>
+</html>

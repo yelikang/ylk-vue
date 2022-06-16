@@ -80,16 +80,21 @@ export function initMixin (Vue: Class<Component>) {
 export function initInternalComponent (vm: Component, options: InternalComponentOptions) {
   const opts = vm.$options = Object.create(vm.constructor.options)
   // doing this because it's faster than dynamic enumeration.
+  // _parentVnode属性在vnode/create-component.js 中的createComponentInstanceForVnode方法创建组件实例时进行的赋值
   const parentVnode = options._parentVnode
   opts.parent = options.parent
   opts._parentVnode = parentVnode
 
   const vnodeComponentOptions = parentVnode.componentOptions
+  // 拿到父vnode虚拟节点上的propsData，赋值给当前组件实例 vm.$options.propsData(initState时，initProps初始化props时会用到这些父级属性)
+  // 父vnode虚拟节点上的propsData 执行render函数构建虚拟dom时，通过attrs属性获取的
   opts.propsData = vnodeComponentOptions.propsData
+
   opts._parentListeners = vnodeComponentOptions.listeners
   opts._renderChildren = vnodeComponentOptions.children
   opts._componentTag = vnodeComponentOptions.tag
 
+  // 挂载render、staticRenderFns到vm.$options上
   if (options.render) {
     opts.render = options.render
     opts.staticRenderFns = options.staticRenderFns

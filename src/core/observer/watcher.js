@@ -58,6 +58,7 @@ export default class Watcher {
       // 下划线watcher代表是渲染watcher(页面渲染内容，另外还有计算watcher等($watch))
       vm._watcher = this
     }
+    // 可以通过vm._watchers看到组件实例vm中关联了哪些watcher 以及他们的表达式 expression
     vm._watchers.push(this)
     // options
     if (options) {
@@ -84,6 +85,7 @@ export default class Watcher {
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn
     } else {
+      // user watcher中的expOrFn为string，通过expOrFn装换获取getter函数
       this.getter = parsePath(expOrFn)
       if (!this.getter) {
         this.getter = noop
@@ -120,7 +122,7 @@ export default class Watcher {
       // "touch" every property so they are all tracked as
       // dependencies for deep watching
       if (this.deep) {
-        // deep属性，在组件watch属性中定义某个属性的深层监听
+        // deep属性，在组件watch属性中定义某个属性的深层监听(user watcher)
         // 递归对象的所有深层属性，调用属性收集监听；当深层属性改变时也会进行回调
         traverse(value)
       }
@@ -216,6 +218,7 @@ export default class Watcher {
         // 判断是不是用户watcher(通过watch属性创建的watcher)
         if (this.user) {
           try {
+            // 执行 watch属性定义的回调函数，传入newVal、oldVal
             this.cb.call(this.vm, value, oldValue)
           } catch (e) {
             handleError(e, this.vm, `callback for watcher "${this.expression}"`)
@@ -231,7 +234,7 @@ export default class Watcher {
    * Evaluate the value of the watcher.
    * This only gets called for lazy watchers.
    */
-  // 专门为lazy watchers(compute watcher)
+  // 专门为lazy watchers(computed watcher)
   evaluate () {
     this.value = this.get()
     this.dirty = false

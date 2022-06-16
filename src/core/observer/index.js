@@ -45,7 +45,7 @@ export class Observer {
     this.dep = new Dep()
     this.vmCount = 0
     // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
-    // 每个响应式对象都有一个__ob__对象，指向Observer；只有对象类型才会定义？？？
+    // 每个响应式对象都有一个__ob__对象，指向Observer；只有对象类型才会定义
     def(value, '__ob__', this)
     // 判断对象是否是数组
     if (Array.isArray(value)) {
@@ -194,8 +194,8 @@ export function defineReactive (
           // 以便后续操作某个data中的对象(例如对象是个数组[1,2,3]，或者是个对象{name:'',age})
           // 对其中的数组进行push、对对象进行属性的$set/$delete时，能够拿到__ob__对象进行视图更新；直接进行赋值更新会调用这里的set去notify
 
-          // 这的Dep.target实际上还是父级同一个Watcher ???
-          // 主要用于Vue.set给对象添加新的属性时能够通知渲染watcher去更新
+          // 这的Dep.target实际上还是父级同一个Watcher ??? 是
+          // 主要用于Vue.set给对象添加新的属性时，能够通过value上的__ob__上的dep，去通知渲染watcher去更新
           childOb.dep.depend()
           if (Array.isArray(value)) {
             dependArray(value)

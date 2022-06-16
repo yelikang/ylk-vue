@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-26 14:38:45
  * @LastEditors: lizi
- * @LastEditTime: 2022-06-13 23:36:05
+ * @LastEditTime: 2022-06-15 15:28:21
  * @FilePath: \ylk-vue\源码分析\09.计算属性与监听(侦听)属性\计算属性实现过程.html
 -->
 
@@ -21,7 +21,7 @@
       <button @click="change(2)">变更年龄</button>
       <!-- 
         理论上页面上没有调用msg属性时，msg属性的变更不会导致c_info的更新，因为页面的render函数不会重新调用
-        但是在computed 计算属性中有下面一段代码
+        但是在computed(computedGetter) 计算属性中有下面一段代码
         if (Dep.target) {
           watcher.depend()
         }

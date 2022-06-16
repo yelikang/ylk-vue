@@ -17,6 +17,7 @@ export function extractPropsFromVNodeData (
   // we are only extracting raw values here.
   // validation and default values are handled in the child
   // component itself.
+  // 子组件中声明了哪些props
   const propOptions = Ctor.options.props
   if (isUndef(propOptions)) {
     return
@@ -24,6 +25,7 @@ export function extractPropsFromVNodeData (
   const res = {}
   const { attrs, props } = data
   if (isDef(attrs) || isDef(props)) {
+    // 循环子组件中声明的props的所有属性(子组件中未申明的props不会接收)
     for (const key in propOptions) {
       const altKey = hyphenate(key)
       if (process.env.NODE_ENV !== 'production') {
@@ -58,6 +60,7 @@ function checkProp (
 ): boolean {
   if (isDef(hash)) {
     if (hasOwn(hash, key)) {
+      // attrs上的key赋值给propsData上的key 即 props[key] = attrs[key]
       res[key] = hash[key]
       if (!preserve) {
         delete hash[key]

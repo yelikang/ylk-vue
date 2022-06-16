@@ -91,6 +91,7 @@ export function initExtend (Vue: GlobalAPI) {
 function initProps (Comp) {
   const props = Comp.options.props
   for (const key in props) {
+    // 组件实例访问props属性 this[key] 实际访问的是 this._props[key]
     proxy(Comp.prototype, `_props`, key)
   }
 }

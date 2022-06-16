@@ -511,8 +511,11 @@
     if (bailRE.test(path)) {
       return
     }
+    // 这里watch 写成 'user.name'，会转换成['user','name']
     var segments = path.split('.');
-    return function (obj) {
+    return function (obj /** obj为vm */) {
+      // 循环读取vm上的最终key 先读取 obj = vm[user]、在obj = vm[user][name]；最终返回的是vm.user.name
+      // 这里读取vm上的属性时，会收集当前user watch的依赖，所以当watch的key中的相关属性变动时，会通知这些user watch update更新；也就是执行回调函数
       for (var i = 0; i < segments.length; i++) {
         if (!obj) { return }
         obj = obj[segments[i]];
@@ -1421,7 +1424,7 @@
     this.dep = new Dep();
     this.vmCount = 0;
     // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
-    // 每个响应式对象都有一个__ob__对象，指向Observer；只有对象类型才会定义？？？
+    // 每个响应式对象都有一个__ob__对象，指向Observer；只有对象类型才会定义
     def(value, '__ob__', this);
     // 判断对象是否是数组
     if (Array.isArray(value)) {
@@ -1569,8 +1572,8 @@
             // 以便后续操作某个data中的对象(例如对象是个数组[1,2,3]，或者是个对象{name:'',age})
             // 对其中的数组进行push、对对象进行属性的$set/$delete时，能够拿到__ob__对象进行视图更新；直接进行赋值更新会调用这里的set去notify
 
-            // 这的Dep.target实际上还是父级同一个Watcher ???
-            // 主要用于Vue.set给对象添加新的属性时能够通知渲染watcher去更新
+            // 这的Dep.target实际上还是父级同一个Watcher ??? 是
+            // 主要用于Vue.set给对象添加新的属性时，能够通过value上的__ob__上的dep，去通知渲染watcher去更新
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray(value);
@@ -2424,6 +2427,7 @@
     // we are only extracting raw values here.
     // validation and default values are handled in the child
     // component itself.
+    // 子组件中声明了哪些props
     var propOptions = Ctor.options.props;
     if (isUndef(propOptions)) {
       return
@@ -2432,6 +2436,7 @@
     var attrs = data.attrs;
     var props = data.props;
     if (isDef(attrs) || isDef(props)) {
+      // 循环子组件中声明的props的所有属性(子组件中未申明的props不会接收)
       for (var key in propOptions) {
         var altKey = hyphenate(key);
         {
@@ -2466,6 +2471,7 @@
   ) {
     if (isDef(hash)) {
       if (hasOwn(hash, key)) {
+        // attrs上的key赋值给propsData上的key 即 props[key] = attrs[key]
         res[key] = hash[key];
         if (!preserve) {
           delete hash[key];
@@ -3422,6 +3428,7 @@
       // 下划线watcher代表是渲染watcher(页面渲染内容，另外还有计算watcher等($watch))
       vm._watcher = this;
     }
+    // 可以通过vm._watchers看到组件实例vm中关联了哪些watcher 以及他们的表达式 expression
     vm._watchers.push(this);
     // options
     if (options) {
@@ -3446,6 +3453,7 @@
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn;
     } else {
+      // user watcher中的expOrFn为string，通过expOrFn装换获取getter函数
       this.getter = parsePath(expOrFn);
       if (!this.getter) {
         this.getter = noop;
@@ -3482,7 +3490,7 @@
       // "touch" every property so they are all tracked as
       // dependencies for deep watching
       if (this.deep) {
-        // deep属性，在组件watch属性中定义某个属性的深层监听
+        // deep属性，在组件watch属性中定义某个属性的深层监听(user watcher)
         // 递归对象的所有深层属性，调用属性收集监听；当深层属性改变时也会进行回调
         traverse(value);
       }
@@ -3578,6 +3586,7 @@
         // 判断是不是用户watcher(通过watch属性创建的watcher)
         if (this.user) {
           try {
+            // 执行 watch属性定义的回调函数，传入newVal、oldVal
             this.cb.call(this.vm, value, oldValue);
           } catch (e) {
             handleError(e, this.vm, ("callback for watcher \"" + (this.expression) + "\""));
@@ -3593,7 +3602,7 @@
    * Evaluate the value of the watcher.
    * This only gets called for lazy watchers.
    */
-  // 专门为lazy watchers(compute watcher)
+  // 专门为lazy watchers(computed watcher)
   Watcher.prototype.evaluate = function evaluate () {
     this.value = this.get();
     this.dirty = false;
@@ -3694,7 +3703,33 @@
             vm
           );
         }
+        // 这里定义子组件的vm._props 属性的所有key为响应式；同时在Vue.extend构造子组件钩子函数时有如下代码:
+
+        // if (Sub.options.props) {
+        //   initProps(Sub)
+        // }
+        // function initProps (Comp) {
+        //   const props = Comp.options.props
+        //   for (const key in props) {
+        //     proxy(Comp.prototype, `_props`, key)
+        //   }
+        // }
+        // export function proxy (target: Object, sourceKey: string, key: string) {
+        //   sharedPropertyDefinition.get = function proxyGetter () {
+        //     return this[sourceKey][key]
+        //   }
+        //   sharedPropertyDefinition.set = function proxySetter (val) {
+        //     this[sourceKey][key] = val
+        //   }
+        //   Object.defineProperty(target, key, sharedPropertyDefinition)
+        // }
+
+        // 该方法代理了组件构造函数(Sub.prototype)的原型链上的_props对象
+        // 当访问 vm[xxxPropsKey] 时，实际走proxy代理访问Sub.prototype.[xxxPropsKey]
+        // 组件实例访问props属性 this[key] 实际访问的是 this._props[key]
+        
         defineReactive$$1(props, key, value, function () {
+          // 这里对子组件的props进行双向绑定，然后传入customSetter，在子组件对props进行修改时会在这里报错(但只能是属性的根的引用地址改变时给出提示；属性下的属性变更不会，只有直接地址改变才会)
           if (!isRoot && !isUpdatingChildComponent) {
             warn(
               "Avoid mutating a prop directly since the value will be " +
@@ -3754,6 +3789,7 @@
           vm
         );
       } else if (!isReserved(key)) {
+        // 组件实例访问 this[key] 实际访问的是 this._data[key]
         proxy(vm, "_data", key);
       }
     }
@@ -3779,7 +3815,7 @@
   function initComputed (vm, computed) {
     // $flow-disable-line
     // 这里的watchers 与vm._computedWatchers指向同一个对象；
-    // 会通过computed的多个key缓存多个watcher
+    // 会通过computed的多个key缓存多个watcher(方便computedGetter中获取 计算属性的watcher)
     var watchers = vm._computedWatchers = Object.create(null);
     // computed properties are just getters during SSR
     var isSSR = isServerRendering();
@@ -3809,7 +3845,7 @@
       // component prototype. We only need to define computed properties defined
       // at instantiation here.
       if (!(key in vm)) {
-        // 计算属性的key没有在vm上定义(没有在props、data上定义)
+        // 计算属性的key没有在vm上定义(没有在props、data上定义)，给vm上定义计算属性，并劫持进行一些操作
         defineComputed(vm, key, userDef);
       } else {
         // computed中定义的key键值，不能与data和props中的key相同
@@ -3876,7 +3912,7 @@
         }
         // 这里的Dep.target应该为computed watcher的上级watcher(渲染watcher)，因为watcher.get执行完之后会popTarget
         // computed计算watcher中依赖的所有属性，都收集计算watcher的上级渲染watcher
-        // 当这些依赖的属性发生变更的时候，通知上级渲染watcher去update，从而再次调用计算属性
+        // 当这些依赖的属性发生变更的时候，通知上级渲染watcher去update，从而再次调用计算属性(防止页面没有调用相关属性不会触发组件更新)
         if (Dep.target) {
           watcher.depend();
         }
@@ -3945,6 +3981,7 @@
     if (typeof handler === 'string') {
       handler = vm[handler];
     }
+    // 通过Vue.prototype.$watch 创建一个user watcher
     return vm.$watch(expOrFn, handler, options)
   }
 
@@ -3984,7 +4021,9 @@
         return createWatcher(vm, expOrFn, cb, options)
       }
       options = options || {};
+      // watcher中user属性为true代表当前watcher为 user watcher
       options.user = true;
+      // 创建user watcher 传入:当前vue实例、表达式(watch的key)、回调函数(watch的function)，配置项(watch的immediate、deep等配置)
       var watcher = new Watcher(vm, expOrFn, cb, options);
       // 配置了immediate，就立即执行一次watch中的handler回调函数
       if (options.immediate) {
@@ -4961,7 +5000,7 @@
       transformModel$1(Ctor.options, data);
     }
 
-    // extract props
+    // extract props 提取父组件的props内容
     var propsData = extractPropsFromVNodeData(data, Ctor, tag);
 
     // functional component
@@ -5228,7 +5267,10 @@
     // so that we get proper render context inside it.
     // args order: tag, data, children, normalizationType, alwaysNormalize
     // internal version is used by render functions compiled from templates
-    vm._c = function (a, b, c, d) { return createElement(vm, a, b, c, d, false); };
+    vm._c = function (a, b, c, d) {
+      console.log('a',a);
+      return createElement(vm, a, b, c, d, false)
+    };
     // normalization is always applied for the public version, used in
     // user-written render functions.
     vm.$createElement = function (a, b, c, d) { return createElement(vm, a, b, c, d, true); };
@@ -5386,16 +5428,21 @@
   function initInternalComponent$1 (vm, options) {
     var opts = vm.$options = Object.create(vm.constructor.options);
     // doing this because it's faster than dynamic enumeration.
+    // _parentVnode属性在vnode/create-component.js 中的createComponentInstanceForVnode方法创建组件实例时进行的赋值
     var parentVnode = options._parentVnode;
     opts.parent = options.parent;
     opts._parentVnode = parentVnode;
 
     var vnodeComponentOptions = parentVnode.componentOptions;
+    // 拿到父vnode虚拟节点上的propsData，赋值给当前组件实例 vm.$options.propsData(initState时，initProps初始化props时会用到这些父级属性)
+    // 父vnode虚拟节点上的propsData 执行render函数构建虚拟dom时，通过attrs属性获取的
     opts.propsData = vnodeComponentOptions.propsData;
+
     opts._parentListeners = vnodeComponentOptions.listeners;
     opts._renderChildren = vnodeComponentOptions.children;
     opts._componentTag = vnodeComponentOptions.tag;
 
+    // 挂载render、staticRenderFns到vm.$options上
     if (options.render) {
       opts.render = options.render;
       opts.staticRenderFns = options.staticRenderFns;
@@ -5573,6 +5620,7 @@
   function initProps$2 (Comp) {
     var props = Comp.options.props;
     for (var key in props) {
+      // 组件实例访问props属性 this[key] 实际访问的是 this._props[key]
       proxy(Comp.prototype, "_props", key);
     }
   }
@@ -5774,7 +5822,7 @@
     this.dep = new Dep();
     this.vmCount = 0;
     // 通过def方法，不传入enumerable，在循环属性进行双向绑定时会不去枚举__ob__属性
-    // 每个响应式对象都有一个__ob__对象，指向Observer；只有对象类型才会定义？？？
+    // 每个响应式对象都有一个__ob__对象，指向Observer；只有对象类型才会定义
     def(value, '__ob__', this);
     // 判断对象是否是数组
     if (Array.isArray(value)) {
@@ -5922,8 +5970,8 @@
             // 以便后续操作某个data中的对象(例如对象是个数组[1,2,3]，或者是个对象{name:'',age})
             // 对其中的数组进行push、对对象进行属性的$set/$delete时，能够拿到__ob__对象进行视图更新；直接进行赋值更新会调用这里的set去notify
 
-            // 这的Dep.target实际上还是父级同一个Watcher ???
-            // 主要用于Vue.set给对象添加新的属性时能够通知渲染watcher去更新
+            // 这的Dep.target实际上还是父级同一个Watcher ??? 是
+            // 主要用于Vue.set给对象添加新的属性时，能够通过value上的__ob__上的dep，去通知渲染watcher去更新
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray$1(value);
