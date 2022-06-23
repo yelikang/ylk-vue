@@ -1,0 +1,103 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-22 17:16:53
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-06-23 11:29:49
+ * @FilePath: \ylk-vue\源码分析\14.组件$on、$off、$emit、$once实现\index.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>$on、$off、$emit、$once</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- 自生注册及调用，其实就是在自生的vm._events 中存入回调，处理回调 -->
+      <a @click="$_onClickSelf">组件自身调用</a>
+
+      <!-- 子组件上通过@绑定的事件，在组件初始化_init时，
+        在initInternalComponent方法中，会先拿到父节点上的listeners(实际是在组件_render函数构建vnode时解析出来的)，
+        赋值给vm.$options._parentListeners
+        (
+          *  这里父节点理解为children组件的占位节点vue-component-children,
+          *  listeners为options._parentVnode.componentOptions.listeners
+        )
+        然后在initEvents中对vm.$options._parentListeners进行系列处理；
+        最终其实就是给子组件的vm._events属性上增加系列的回调；
+        在$emit的时候就去循环处理子组件vm._events中的回调
+        vm._events = {
+          'on-click':[fn1, fn2]
+        }
+      -->
+      <children @on-click="$_onClickChild"></children>
+
+      <!-- $once 实际上是在调用一次函数之后，通过$off去移除掉对应的回调；保证只执行一次 -->
+      <p @click="$_onOnce">点击一次</p>
+
+
+      <!-- 
+        另外，为什么事件注册在了子组件vm._events上面，但是调用的时候，作用域会限定在父组件的上面:
+        是因为组件的render函数通过with限定了click函数的调用作用域为当前父组件，所以这里调用$_onClickChild时作用域会限定在父组件
+
+        vm.$options._render函数如下:
+        (function anonymous() {
+              with (this) {
+                  return _c('div', {
+                      attrs: {
+                          "id": "app"
+                      }
+                  }, [_c('children', {
+                      on: {
+                          "on-click": $_onClickChild
+                      }
+                  })], 1)
+              }
+          }
+         )
+       -->
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    let children = {
+      template: `<div @click="$_onChild">子组件调用$emit</div>`,
+      methods: {
+        $_onChild() {
+          this.$emit("on-click", "子组件触发$emit");
+        },
+      },
+    };
+
+    new Vue({
+      el: "#app",
+      components: {
+        children,
+      },
+      mounted() {
+        this.$on("clickSelf", (info) => {
+          alert(info);
+        });
+
+        this.$once("clickOnce", (info) => {
+          alert(info);
+        });
+      },
+      methods: {
+        $_onClickSelf() {
+          this.$emit("clickSelf", "自身调用");
+        },
+        $_onClickChild(info) {
+          alert(info);
+        },
+        $_onOnce() {
+          this.$emit("clickOnce", "调用一次");
+        },
+      },
+    });
+  </script>
+</html>

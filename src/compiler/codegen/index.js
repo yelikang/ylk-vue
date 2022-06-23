@@ -61,6 +61,7 @@ export function genElement (el: ASTElement, state: CodegenState): string {
   } else if (el.once && !el.onceProcessed) {
     return genOnce(el, state)
   } else if (el.for && !el.forProcessed) {
+    // 这里看出vue对于v-for的循环会优先与v-if
     return genFor(el, state)
   } else if (el.if && !el.ifProcessed) {
     return genIf(el, state)

@@ -313,6 +313,7 @@ export function parse (
         }
         let res
         let child: ?ASTNode
+        // HTML解析器解析到文本之后，使用文本解析器解析是否包含变量表达式
         if (!inVPre && text !== ' ' && (res = parseText(text, delimiters))) {
           child = {
             type: 2,

@@ -1322,6 +1322,7 @@
   // used for static nodes and slot nodes because they may be reused across
   // multiple renders, cloning them avoids errors when DOM manipulations rely
   // on their elm reference.
+  // 克隆节点，用于优化静态节点和插槽节点
   function cloneVNode (vnode) {
     var cloned = new VNode(
       vnode.tag,
@@ -2862,6 +2863,7 @@
         fn.apply(vm, arguments);
       }
       on.fn = fn;
+      // $once，实际上是在调用一次函数之后，通过$off去移除掉对应的回调；保证只执行一次
       vm.$on(event, on);
       return vm
     };
@@ -3278,6 +3280,7 @@
     flushing = true;
     var watcher, id;
 
+    // watcher从小到大执行原因
     // Sort queue before flush.
     // This ensures that:
     // 1. Components are updated from parent to child. (because parent is always
@@ -3286,7 +3289,7 @@
 
     // 2. A component's user watchers are run before its render watcher (because
     //    user watchers are created before the render watcher)
-    //    user wathcers(用户给组件定义watch属性)在render watcher之前
+    //    user wathcers(用户给组件定义watch属性)在render watcher之前 === initWatch创建user watcher，在mountComponent 创建 render watcher之前
 
     // 3. If a component is destroyed during a parent component's watcher run,
     //    its watchers can be skipped.
@@ -5268,7 +5271,6 @@
     // args order: tag, data, children, normalizationType, alwaysNormalize
     // internal version is used by render functions compiled from templates
     vm._c = function (a, b, c, d) {
-      console.log('a',a);
       return createElement(vm, a, b, c, d, false)
     };
     // normalization is always applied for the public version, used in
@@ -5438,6 +5440,7 @@
     // 父vnode虚拟节点上的propsData 执行render函数构建虚拟dom时，通过attrs属性获取的
     opts.propsData = vnodeComponentOptions.propsData;
 
+    // 父vnode上的listeners，赋值给vm.$options._parentListeners，在组件初始化_init中会调用eventsMixin，把这些事件注册到vm._events上面
     opts._parentListeners = vnodeComponentOptions.listeners;
     opts._renderChildren = vnodeComponentOptions.children;
     opts._componentTag = vnodeComponentOptions.tag;
@@ -5650,6 +5653,7 @@
           if (type === 'component') {
             validateComponentName(id);
           }
+          // Vue.component实现
           if (type === 'component' && isPlainObject(definition)) {
             definition.name = definition.name || id;
             definition = this.options._base.extend(definition);
@@ -7010,6 +7014,7 @@
       // 旧节点循环完 || 新节点循环完就跳出循环
       while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
         if (isUndef(oldStartVnode)) {
+          // 节点被移动位置后的情况
           oldStartVnode = oldCh[++oldStartIdx]; // Vnode has been moved left
         } else if (isUndef(oldEndVnode)) {
           oldEndVnode = oldCh[--oldEndIdx];
@@ -11562,6 +11567,7 @@
           }
           var res;
           var child;
+          // HTML解析器解析到文本之后，使用文本解析器解析是否包含变量表达式
           if (!inVPre && text !== ' ' && (res = parseText$1(text, delimiters$1))) {
             child = {
               type: 2,
@@ -12135,8 +12141,10 @@
     isStaticKey = genStaticKeysCached(options.staticKeys || '');
     isPlatformReservedTag = options.isReservedTag || no;
     // first pass: mark all non-static nodes.
+    // 标记所有静态节点
     markStatic$1(root);
     // second pass: mark static roots.
+    // 标记静态根节点(所有子节点都为静态节点，就位静态根节点)
     markStaticRoots(root, false);
   }
 
@@ -12456,6 +12464,7 @@
     } else if (el.once && !el.onceProcessed) {
       return genOnce(el, state)
     } else if (el.for && !el.forProcessed) {
+      // 这里看出vue对于v-for的循环会优先与v-if
       return genFor(el, state)
     } else if (el.if && !el.ifProcessed) {
       return genIf(el, state)
@@ -13241,10 +13250,13 @@
     template,
     options
   ) {
+    // 1.解析器解析成AST抽象语法树
     var ast = parse$1(template.trim(), options);
     if (options.optimize !== false) {
+      // 2.优化器优化静态节点
       optimize(ast, options);
     }
+    // 3.生成目标代码
     var code = generate(ast, options);
     return {
       ast: ast,

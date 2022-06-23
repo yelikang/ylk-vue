@@ -442,6 +442,7 @@ export function createPatchFunction (backend) {
     // 旧节点循环完 || 新节点循环完就跳出循环
     while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
       if (isUndef(oldStartVnode)) {
+        // 节点被移动位置后的情况
         oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
       } else if (isUndef(oldEndVnode)) {
         oldEndVnode = oldCh[--oldEndIdx]

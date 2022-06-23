@@ -75,6 +75,7 @@ export function eventsMixin (Vue: Class<Component>) {
       fn.apply(vm, arguments)
     }
     on.fn = fn
+    // $once，实际上是在调用一次函数之后，通过$off去移除掉对应的回调；保证只执行一次
     vm.$on(event, on)
     return vm
   }

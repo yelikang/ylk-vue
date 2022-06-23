@@ -40,6 +40,7 @@ function flushSchedulerQueue () {
   flushing = true
   let watcher, id
 
+  // watcher从小到大执行原因
   // Sort queue before flush.
   // This ensures that:
   // 1. Components are updated from parent to child. (because parent is always
@@ -48,7 +49,7 @@ function flushSchedulerQueue () {
 
   // 2. A component's user watchers are run before its render watcher (because
   //    user watchers are created before the render watcher)
-  //    user wathcers(用户给组件定义watch属性)在render watcher之前
+  //    user wathcers(用户给组件定义watch属性)在render watcher之前 === initWatch创建user watcher，在mountComponent 创建 render watcher之前
 
   // 3. If a component is destroyed during a parent component's watcher run,
   //    its watchers can be skipped.

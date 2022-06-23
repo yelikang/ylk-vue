@@ -90,6 +90,7 @@ export function initInternalComponent (vm: Component, options: InternalComponent
   // 父vnode虚拟节点上的propsData 执行render函数构建虚拟dom时，通过attrs属性获取的
   opts.propsData = vnodeComponentOptions.propsData
 
+  // 父vnode上的listeners，赋值给vm.$options._parentListeners，在组件初始化_init中会调用eventsMixin，把这些事件注册到vm._events上面
   opts._parentListeners = vnodeComponentOptions.listeners
   opts._renderChildren = vnodeComponentOptions.children
   opts._componentTag = vnodeComponentOptions.tag
