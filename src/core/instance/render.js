@@ -66,10 +66,12 @@ export function renderMixin (Vue: Class<Component>) {
     const { render, _parentVnode } = vm.$options
 
     if (_parentVnode) {
-      vm.$scopedSlots = normalizeScopedSlots(
-        _parentVnode.data.scopedSlots,
-        vm.$slots
-      )
+      // vm.$scopedSlots = normalizeScopedSlots(
+      //   _parentVnode.data.scopedSlots,
+      //   vm.$slots
+      // )
+      // 回退2.5.12版本，不然这里父组件更新导致子组件也更新
+      vm.$scopedSlots = _parentVnode.data.scopedSlots || emptyObject
     }
 
     // set parent vnode. this allows render functions to have access

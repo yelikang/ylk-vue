@@ -259,7 +259,7 @@ export function updateChildComponent (
     for (let i = 0; i < propKeys.length; i++) {
       const key = propKeys[i]
       const propOptions: any = vm.$options.props // wtf flow?
-      // 子props更新
+      // 子props更新(这里props属性改变会让dep通知子组件的渲染watcher去更新，子组件也就更新了)
       props[key] = validateProp(key, propOptions, propsData, vm)
     }
     toggleObserving(true)
