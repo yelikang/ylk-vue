@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-26 14:38:45
  * @LastEditors: lizi
- * @LastEditTime: 2022-06-24 16:53:32
+ * @LastEditTime: 2022-06-24 17:17:23
  * @FilePath: \ylk-vue\源码分析\04.父子组件更新钩子函数\index.html
 -->
 <!DOCTYPE html>
@@ -17,6 +17,7 @@
   <body>
     <div id="app">
       <div @click="_change">{{name}}</div>
+      <p @click="_force">强制更新父组件</p>
       <children :name="name"/>
     </div>
   </body>
@@ -60,6 +61,11 @@
       methods:{
         _change(){
           this.name = '父亲改变'
+        },
+        _force(){
+          // 属性改变：父组件属性更新，如果子组件中定义了props接收，并使用了，那么父组件更新过程中会更新props，从而使得子组件也更新
+          // 强制更新：forceUpdate，只会通知当前父组件的渲染watcher去更新，vm._watcher.update；更新过程中updateChildComponent,更新props发现没有改变，也就不会使得子组件更新 
+          this.$forceUpdate();
         }
       },
       beforeUpdate(){
