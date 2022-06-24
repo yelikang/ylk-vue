@@ -2871,11 +2871,13 @@
     Vue.prototype.$off = function (event, fn) {
       var vm = this;
       // all
+      // 1.$off没有提供参数，则移除当前vm所有的事件监听
       if (!arguments.length) {
         vm._events = Object.create(null);
         return vm
       }
       // array of events
+      // $off event传递的是个数组，依次循环调用$off
       if (Array.isArray(event)) {
         for (var i$1 = 0, l = event.length; i$1 < l; i$1++) {
           vm.$off(event[i$1], fn);
@@ -2887,6 +2889,7 @@
       if (!cbs) {
         return vm
       }
+      // 2.$off只传递了一个参数，event参数，则移除该事件所有的监听
       if (!fn) {
         vm._events[event] = null;
         return vm
@@ -2896,6 +2899,7 @@
       var i = cbs.length;
       while (i--) {
         cb = cbs[i];
+        // 3.$off即传递了event、又传递了fn；则只会移除这个回调的监听(这种情况就不能用匿名回调函数)
         if (cb === fn || cb.fn === fn) {
           cbs.splice(i, 1);
           break
@@ -3074,6 +3078,7 @@
     Vue.prototype.$forceUpdate = function () {
       var vm = this;
       if (vm._watcher) {
+        // 强制当前组件实例vm的渲染watcher(_watcher为渲染watcher)去更新
         vm._watcher.update();
       }
     };

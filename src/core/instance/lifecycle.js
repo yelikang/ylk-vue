@@ -92,6 +92,7 @@ export function lifecycleMixin (Vue: Class<Component>) {
   Vue.prototype.$forceUpdate = function () {
     const vm: Component = this
     if (vm._watcher) {
+      // 强制当前组件实例vm的渲染watcher(_watcher为渲染watcher)去更新
       vm._watcher.update()
     }
   }

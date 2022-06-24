@@ -83,11 +83,13 @@ export function eventsMixin (Vue: Class<Component>) {
   Vue.prototype.$off = function (event?: string | Array<string>, fn?: Function): Component {
     const vm: Component = this
     // all
+    // 1.$off没有提供参数，则移除当前vm所有的事件监听
     if (!arguments.length) {
       vm._events = Object.create(null)
       return vm
     }
     // array of events
+    // $off event传递的是个数组，依次循环调用$off
     if (Array.isArray(event)) {
       for (let i = 0, l = event.length; i < l; i++) {
         vm.$off(event[i], fn)
@@ -99,6 +101,7 @@ export function eventsMixin (Vue: Class<Component>) {
     if (!cbs) {
       return vm
     }
+    // 2.$off只传递了一个参数，event参数，则移除该事件所有的监听
     if (!fn) {
       vm._events[event] = null
       return vm
@@ -108,6 +111,7 @@ export function eventsMixin (Vue: Class<Component>) {
     let i = cbs.length
     while (i--) {
       cb = cbs[i]
+      // 3.$off即传递了event、又传递了fn；则只会移除这个回调的监听(这种情况就不能用匿名回调函数)
       if (cb === fn || cb.fn === fn) {
         cbs.splice(i, 1)
         break
