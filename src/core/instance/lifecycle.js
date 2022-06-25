@@ -104,13 +104,14 @@ export function lifecycleMixin (Vue: Class<Component>) {
     }
     callHook(vm, 'beforeDestroy')
     vm._isBeingDestroyed = true
-    // remove self from parent
+    // remove self from parent  从父组件中清除掉
     const parent = vm.$parent
     if (parent && !parent._isBeingDestroyed && !vm.$options.abstract) {
       remove(parent.$children, vm)
     }
     // teardown watchers
     if (vm._watcher) {
+      // 卸载当前组件实例vm上渲染组件中的所有依赖
       vm._watcher.teardown()
     }
     let i = vm._watchers.length
