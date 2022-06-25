@@ -24,6 +24,7 @@ export function initAssetRegisters (Vue: GlobalAPI) {
           definition.name = definition.name || id
           definition = this.options._base.extend(definition)
         }
+        // Vue.directive 指令的实现
         if (type === 'directive' && typeof definition === 'function') {
           definition = { bind: definition, update: definition }
         }
