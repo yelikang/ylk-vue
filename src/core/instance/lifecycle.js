@@ -149,6 +149,7 @@ export function mountComponent (
 ): Component {
   vm.$el = el
   if (!vm.$options.render) {
+    // 不存在render渲染函数，就设置一个默认的渲染函数；并且在开发环境中给出警告
     vm.$options.render = createEmptyVNode
     if (process.env.NODE_ENV !== 'production') {
       /* istanbul ignore if */

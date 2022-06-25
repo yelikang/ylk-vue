@@ -21,6 +21,8 @@ export function initExtend (Vue: GlobalAPI) {
     extendOptions = extendOptions || {}
     const Super = this
     const SuperId = Super.cid
+
+    // 组件构造options上定义一个_Ctor对象，用来缓存该组件的构造函数
     const cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {})
     if (cachedCtors[SuperId]) {
       return cachedCtors[SuperId]
@@ -35,7 +37,7 @@ export function initExtend (Vue: GlobalAPI) {
     const Sub = function VueComponent (options) {
       this._init(options)
     }
-    // 子构造函数原型链指向父类的prototype
+    // 子构造函数原型链指向父类的prototype; vue子类就可以使用vue.prototype原型链上定义的所有方法
     Sub.prototype = Object.create(Super.prototype)
     // 构造函数指回自己
     Sub.prototype.constructor = Sub
@@ -59,6 +61,7 @@ export function initExtend (Vue: GlobalAPI) {
       initComputed(Sub)
     }
 
+    // 全局方法依次赋值
     // allow further extension/mixin/plugin usage
     Sub.extend = Super.extend
     Sub.mixin = Super.mixin
@@ -66,6 +69,7 @@ export function initExtend (Vue: GlobalAPI) {
 
     // create asset registers, so extended classes
     // can have their private assets too.
+    // ASSET_TYPES = ['component','directive','filter']
     ASSET_TYPES.forEach(function (type) {
       Sub[type] = Super[type]
     })
