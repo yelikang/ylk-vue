@@ -177,6 +177,10 @@ export function createComponent (
 
   // functional component
   if (isTrue(Ctor.options.functional)) {
+    // 判断是不是函数式组件
+    // 在构建组件vnode时，不会构建组件级别的vnode；直接是通过render函数构建元素级别的vnode(这也是得益于双方的约定，设置了functional函数式组件，里面就不能再是其它组件，只能是原生元素)
+    // 创建原生时，也就没有componentVNodeHooks.init调用createComponentInstanceForVnode调用组件构造函数，构建组件实例;
+    // 因此也就不会调用_init去初始化组件相关的state状态等流程，所以性能会更好
     return createFunctionalComponent(Ctor, propsData, data, context, children)
   }
 
