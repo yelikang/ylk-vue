@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-22 17:16:53
  * @LastEditors: lizi
- * @LastEditTime: 2022-06-27 18:17:10
+ * @LastEditTime: 2022-06-27 19:05:53
  * @FilePath: \ylk-vue\源码分析\15.direactive指令的实现\index.html
 -->
 <!DOCTYPE html>
@@ -40,6 +40,8 @@
     // 2.全局directive注册时会把对应的指定绑定在this.$options.direactives上,子组件都会继承该属性
     // 3.__patch__构建真实dom时会进行updateDirectives操作(这些操作其实也是通过往组件不同阶段的钩子函数中注入回调来实现的)
     // 4.updateDirectives中会去this.$options.directives属性上查找对应的属性，然后执行相应的回调
+    // 5.自定义的指令如果只定义个一个函数，会将其转换为对象(指定bind/update属性)；属性中的bind、update都指向当前函数(全局组件在ASSET_TYPES.forEach处理direactive中处理，局部组件在组件初始化调用mergeOptions中调用normalizeDirectives处理)
+    // 6.v-model这种指令，默认绑定了inserted、componentUpdated钩子函数，处理逻辑与自定义不同
     console.log(vm);
   </script>
 </html>

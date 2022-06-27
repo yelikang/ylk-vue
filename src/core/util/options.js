@@ -405,6 +405,7 @@ export function mergeOptions (
 
   normalizeProps(child, vm)
   normalizeInject(child, vm)
+  // 规范化指令(如果指令只传递了一个函数，就处理成一个对象，bind/update都指向这个函数)
   normalizeDirectives(child)
 
   // Apply extends and mixins on the child options,
