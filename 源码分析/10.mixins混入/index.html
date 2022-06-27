@@ -1,3 +1,11 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-06-25 16:13:10
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-06-27 20:16:00
+ * @FilePath: \ylk-vue\源码分析\10.mixins混入\index.html
+-->
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -14,6 +22,7 @@
   <script src="../../dist/vue.js"></script>
   <script>
     // mixin实际上是把里面配置的options内容合并到Vue.options上，注意这里是循环赋值，而不是赋值引用；所以尽量不要使用全局的mixin
+    // 循环赋值才能保证每个组件实例中的mixin内容不会相互影响
 
     //   Vue.mixin = function (mixin: Object) {
     //   this.options = mergeOptions(this.options, mixin)
