@@ -1,0 +1,48 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-22 17:16:53
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-06-27 19:08:18
+ * @FilePath: \ylk-vue\源码分析\16.filter过滤器的实现\index.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>16.filter过滤器的实现</title>
+  </head>
+  <body>
+    <div id="app">
+      <p>{{name | scopedFilter}}</p>
+      <p>{{name | globalFilter}}</p>
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    Vue.filter("globalFilter", function (val) {
+      return val + "global";
+    });
+
+    const vm = new Vue({
+      el: "#app",
+      data(){
+        return {
+          name:'名字'
+        }
+      },
+      filters: {
+        scopedFilter(val) {
+          return val + "scoped";
+        },
+      },
+    });
+
+    // 1.通过查看vm.$options.render函数，可以看到带有过滤器的元素，在解析时会解析成_f()()形式(例如这里的:_f("scopedFilter")(name))
+    // 2._f是在render-helps中绑定的resolveFilter函数，基本逻辑也是找this.$options上的filters上对应的key，找不到就找原型链上的(通过resolveAsset方法去找)
+    // 3.在执行render函数构建vnode时候，会执行_f函数，寻找指定的函数，然后执行相应的函数
+    console.log(vm);
+  </script>
+</html>
