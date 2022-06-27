@@ -1,0 +1,45 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-22 17:16:53
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-06-27 18:17:10
+ * @FilePath: \ylk-vue\源码分析\15.direactive指令的实现\index.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>15.direactive指令的实现</title>
+  </head>
+  <body>
+    <div id="app">
+      <p v-scoped>scoped指令</p>
+      <p v-global>global指令</p>
+
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    Vue.directive("global", function () {
+      console.log("global");
+    });
+
+
+    const vm = new Vue({
+      el: "#app",
+      directives: {
+        scoped() {
+          console.log("scoped");
+        },
+      },
+    });
+    // 1.通过查看组件实例vm上的vm.$option.render函数，可以看到解析出来的render函数中会把指令解析成directives属性，值为数组(可以有多个指令)
+    // 2.全局directive注册时会把对应的指定绑定在this.$options.direactives上,子组件都会继承该属性
+    // 3.__patch__构建真实dom时会进行updateDirectives操作(这些操作其实也是通过往组件不同阶段的钩子函数中注入回调来实现的)
+    // 4.updateDirectives中会去this.$options.directives属性上查找对应的属性，然后执行相应的回调
+    console.log(vm);
+  </script>
+</html>
