@@ -170,7 +170,20 @@ function dedupeHooks (hooks) {
   }
   return res
 }
-
+// LIFECYCLE_HOOKS = [
+//   'beforeCreate',
+//   'created',
+//   'beforeMount',
+//   'mounted',
+//   'beforeUpdate',
+//   'updated',
+//   'beforeDestroy',
+//   'destroyed',
+//   'activated',
+//   'deactivated',
+//   'errorCaptured',
+//   'ssrPrefetch'
+// ]
 LIFECYCLE_HOOKS.forEach(hook => {
   // 对于生命周期钩子函数的合并，会返回一个数组；所以组件多个相同的钩子函数会依次进行
   strats[hook] = mergeHook

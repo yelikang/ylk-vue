@@ -9,6 +9,7 @@ export function handleError (err: Error, vm: any, info: string) {
   if (vm) {
     let cur = vm
     while ((cur = cur.$parent)) {
+      // 逐个唤起自身的errorCaptured钩子函数，以及父级的errorCaptured钩子函数
       const hooks = cur.$options.errorCaptured
       if (hooks) {
         for (let i = 0; i < hooks.length; i++) {
