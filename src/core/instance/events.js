@@ -112,6 +112,7 @@ export function eventsMixin (Vue: Class<Component>) {
     while (i--) {
       cb = cbs[i]
       // 3.$off即传递了event、又传递了fn；则只会移除这个回调的监听(这种情况就不能用匿名回调函数)
+      // 这里的cb.fn === fn，是为了保证$once指定完回调之后，用户传入的fn与,on.fn指向同一个函数，以便能够被移除
       if (cb === fn || cb.fn === fn) {
         cbs.splice(i, 1)
         break

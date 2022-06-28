@@ -62,6 +62,7 @@ export function updateListeners (
   for (name in on) {
     def = cur = on[name]
     old = oldOn[name]
+    // normalizeEvent用于判断一些事件是否使用了修饰符，例如.once，就判断是否带有~符号(符号在编译阶段就会处理生成)，返回的属性once就为true
     event = normalizeEvent(name)
     /* istanbul ignore if */
     if (__WEEX__ && isPlainObject(def)) {

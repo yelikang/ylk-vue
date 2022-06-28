@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-22 17:16:53
  * @LastEditors: lizi
- * @LastEditTime: 2022-06-23 11:29:49
+ * @LastEditTime: 2022-06-28 08:37:48
  * @FilePath: \ylk-vue\源码分析\14.组件$on、$off、$emit、$once实现\index.html
 -->
 
@@ -37,7 +37,14 @@
       <children @on-click="$_onClickChild"></children>
 
       <!-- $once 实际上是在调用一次函数之后，通过$off去移除掉对应的回调；保证只执行一次 -->
-      <p @click="$_onOnce">点击一次</p>
+      <!-- <p @click="$_onOnce">点击一次</p> -->
+      <!-- 带有事件修饰符，在模板编译阶段解析属性时，会将修饰符改成对应的符号加在事件名前面:
+        @click.once => ~click
+        @click.capture => !click
+        @click.passive => &click
+      -->
+      <p @click.once="$_onOnce">点击一次</p>
+
 
 
       <!-- 
@@ -95,7 +102,8 @@
           alert(info);
         },
         $_onOnce() {
-          this.$emit("clickOnce", "调用一次");
+          // this.$emit("clickOnce", "调用一次");
+          alert('调用一次')
         },
       },
     });

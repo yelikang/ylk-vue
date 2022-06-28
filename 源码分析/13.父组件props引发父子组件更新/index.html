@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-22 17:16:53
  * @LastEditors: lizi
- * @LastEditTime: 2022-06-16 16:47:17
+ * @LastEditTime: 2022-06-28 09:51:56
  * @FilePath: \ylk-vue\源码分析\13.父组件props引发父子组件更新\index.html
 -->
 
@@ -29,6 +29,12 @@
           但是父组件传递进去的attrs属性的值已经是双向绑定的了，所以判断 value 上面有 __ob__对象，就不再绑定
           所以应该是父组件属性双向绑定创建dep消息中心时，会收集当前属性会影响哪些watcher，包括子组件的render watcher
 
+
+          整体:
+          1.构建组件vnode时(构建组件构造函数时)，会通过extractPropsFromVNodeData函数，从render函数中获取的attrs属性作为props，并赋值给vnode.componentOptions.propsData;所以父级占位vnode中就有了proposData属性(其中基础数据按值传递、对象按引用传值)
+          2.在组件_init时，initInternalComponent方法会拿到父级占位vnode中的vnode.componentOptions.propsData，并赋值给当前vm.$options.propsData
+          3.在initState时调用initProps方法去初始化实例的props数据，主要是对比子类中声明的props属性，与父类propsData属性进行匹配
+          4.从父级propsData取值然后赋值给 vm._props，并对_props进行代理，使得 vm.xxxProps时从 vm._props.xxxProps中取值
       -->
       <children :loading="loading" :user="user"/>
     </div>

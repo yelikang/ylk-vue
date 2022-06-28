@@ -257,6 +257,7 @@ export function updateChildComponent (
   if (propsData && vm.$options.props) {
     toggleObserving(false)
     const props = vm._props
+    // 在initState阶段initProps时缓存了子组件有定义哪些props,这样更新props时才有针对性的更新
     const propKeys = vm.$options._propKeys || []
     for (let i = 0; i < propKeys.length; i++) {
       const key = propKeys[i]

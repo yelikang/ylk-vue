@@ -55,6 +55,7 @@ export function resolveInject (inject: any, vm: Component): ?Object {
           result[key] = source._provided[provideKey]
           break
         }
+        // 逐级向上查找
         source = source.$parent
       }
       if (!source) {
