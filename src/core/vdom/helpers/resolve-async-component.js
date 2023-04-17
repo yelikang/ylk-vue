@@ -76,10 +76,12 @@ export function resolveAsyncComponent (
 
     const resolve = once((res: Object | Class<Component>) => {
       // cache resolved
+      // 异步加载的组件res转换成component
       factory.resolved = ensureCtor(res, baseCtor)
       // invoke callbacks only if this is not a synchronous resolve
       // (async resolves are shimmed as synchronous during SSR)
       if (!sync) {
+        // 异步组件resolve之后，会强制渲染
         forceRender(true)
       }
     })
@@ -102,6 +104,7 @@ export function resolveAsyncComponent (
       if (isPromise(res)) {
         // () => Promise
         if (isUndef(factory.resolved)) {
+          // 定义then之后的resolve、reject函数
           res.then(resolve, reject)
         }
       } else if (isPromise(res.component)) {
@@ -109,10 +112,12 @@ export function resolveAsyncComponent (
         res.component.then(resolve, reject)
 
         if (isDef(res.error)) {
+          // 将传入的error组件进行转换成component
           factory.errorComp = ensureCtor(res.error, baseCtor)
         }
 
         if (isDef(res.loading)) {
+          // 将传入的loading组件进行转换成component
           factory.loadingComp = ensureCtor(res.loading, baseCtor)
           if (res.delay === 0) {
             factory.loading = true

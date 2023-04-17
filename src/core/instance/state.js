@@ -177,6 +177,7 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // isReserved 判断data中的key是否以$、_开头；以此开头的数据不会进行代理，在调用时会报错，为了防止与vue内部冲突
       // 组件实例访问 this[key] 实际访问的是 this._data[key]
       proxy(vm, `_data`, key)
     }

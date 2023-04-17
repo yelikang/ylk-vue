@@ -3,7 +3,7 @@
  * @Autor: lizi
  * @Date: 2022-04-26 14:38:45
  * @LastEditors: lizi
- * @LastEditTime: 2022-06-25 17:06:10
+ * @LastEditTime: 2022-07-21 14:58:46
  * @FilePath: \ylk-vue\源码分析\04.父子组件更新钩子函数\index.html
 -->
 <!DOCTYPE html>
@@ -62,6 +62,7 @@
       },
       methods:{
         _change(){
+          // 父组件中属性改变，如果未向子组件传递该属性(或者传递了但未使用)，子组件就不会更新
           this.name = '父亲改变'
         },
         _force(){

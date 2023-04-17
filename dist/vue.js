@@ -1,6 +1,6 @@
 /*!
  * Vue.js v2.5.21
- * (c) 2014-2022 Evan You
+ * (c) 2014-2023 Evan You
  * Released under the MIT License.
  */
 (function (global, factory) {
@@ -1033,6 +1033,7 @@
     if (vm) {
       var cur = vm;
       while ((cur = cur.$parent)) {
+        // 逐个唤起自身的errorCaptured钩子函数，以及父级的errorCaptured钩子函数
         var hooks = cur.$options.errorCaptured;
         if (hooks) {
           for (var i = 0; i < hooks.length; i++) {
@@ -1098,6 +1099,7 @@
 
   function flushCallbacks () {
     pending = false;
+    // 提取callbancks从0，到最后(不传代表最后)的内容
     var copies = callbacks.slice(0);
     callbacks.length = 0;
     for (var i = 0; i < copies.length; i++) {
@@ -1840,7 +1842,20 @@
     }
     return res
   }
-
+  // LIFECYCLE_HOOKS = [
+  //   'beforeCreate',
+  //   'created',
+  //   'beforeMount',
+  //   'mounted',
+  //   'beforeUpdate',
+  //   'updated',
+  //   'beforeDestroy',
+  //   'destroyed',
+  //   'activated',
+  //   'deactivated',
+  //   'errorCaptured',
+  //   'ssrPrefetch'
+  // ]
   LIFECYCLE_HOOKS.forEach(function (hook) {
     // 对于生命周期钩子函数的合并，会返回一个数组；所以组件多个相同的钩子函数会依次进行
     strats[hook] = mergeHook;
@@ -2075,6 +2090,7 @@
 
     normalizeProps(child, vm);
     normalizeInject(child, vm);
+    // 规范化指令(如果指令只传递了一个函数，就处理成一个对象，bind/update都指向这个函数)
     normalizeDirectives(child);
 
     // Apply extends and mixins on the child options,
@@ -2356,6 +2372,7 @@
     for (name in on) {
       def$$1 = cur = on[name];
       old = oldOn[name];
+      // normalizeEvent用于判断一些事件是否使用了修饰符，例如.once，就判断是否带有~符号(符号在编译阶段就会处理生成)，返回的属性once就为true
       event = normalizeEvent(name);
       if (isUndef(cur)) {
         warn(
@@ -2704,10 +2721,12 @@
 
       var resolve = once(function (res) {
         // cache resolved
+        // 异步加载的组件res转换成component
         factory.resolved = ensureCtor(res, baseCtor);
         // invoke callbacks only if this is not a synchronous resolve
         // (async resolves are shimmed as synchronous during SSR)
         if (!sync) {
+          // 异步组件resolve之后，会强制渲染
           forceRender(true);
         }
       });
@@ -2730,6 +2749,7 @@
         if (isPromise(res)) {
           // () => Promise
           if (isUndef(factory.resolved)) {
+            // 定义then之后的resolve、reject函数
             res.then(resolve, reject);
           }
         } else if (isPromise(res.component)) {
@@ -2737,10 +2757,12 @@
           res.component.then(resolve, reject);
 
           if (isDef(res.error)) {
+            // 将传入的error组件进行转换成component
             factory.errorComp = ensureCtor(res.error, baseCtor);
           }
 
           if (isDef(res.loading)) {
+            // 将传入的loading组件进行转换成component
             factory.loadingComp = ensureCtor(res.loading, baseCtor);
             if (res.delay === 0) {
               factory.loading = true;
@@ -2900,6 +2922,7 @@
       while (i--) {
         cb = cbs[i];
         // 3.$off即传递了event、又传递了fn；则只会移除这个回调的监听(这种情况就不能用匿名回调函数)
+        // 这里的cb.fn === fn，是为了保证$once指定完回调之后，用户传入的fn与,on.fn指向同一个函数，以便能够被移除
         if (cb === fn || cb.fn === fn) {
           cbs.splice(i, 1);
           break
@@ -3090,13 +3113,14 @@
       }
       callHook(vm, 'beforeDestroy');
       vm._isBeingDestroyed = true;
-      // remove self from parent
+      // remove self from parent  从父组件中清除掉
       var parent = vm.$parent;
       if (parent && !parent._isBeingDestroyed && !vm.$options.abstract) {
         remove(parent.$children, vm);
       }
       // teardown watchers
       if (vm._watcher) {
+        // 卸载当前组件实例vm上渲染组件中的所有依赖
         vm._watcher.teardown();
       }
       var i = vm._watchers.length;
@@ -3167,6 +3191,7 @@
     if (propsData && vm.$options.props) {
       toggleObserving(false);
       var props = vm._props;
+      // 在initState阶段initProps时缓存了子组件有定义哪些props,这样更新props时才有针对性的更新
       var propKeys = vm.$options._propKeys || [];
       for (var i = 0; i < propKeys.length; i++) {
         var key = propKeys[i];
@@ -3797,6 +3822,7 @@
           vm
         );
       } else if (!isReserved(key)) {
+        // isReserved 判断data中的key是否以$、_开头；以此开头的数据不会进行代理，在调用时会报错，为了防止与vue内部冲突
         // 组件实例访问 this[key] 实际访问的是 this._data[key]
         proxy(vm, "_data", key);
       }
@@ -4098,6 +4124,7 @@
             result[key] = source._provided[provideKey];
             break
           }
+          // 逐级向上查找
           source = source.$parent;
         }
         if (!source) {
@@ -4776,6 +4803,7 @@
   ) {
     vm.$el = el;
     if (!vm.$options.render) {
+      // 不存在render渲染函数，就设置一个默认的渲染函数；并且在开发环境中给出警告
       vm.$options.render = createEmptyVNode;
       {
         /* istanbul ignore if */
@@ -5013,6 +5041,10 @@
 
     // functional component
     if (isTrue(Ctor.options.functional)) {
+      // 判断是不是函数式组件
+      // 在构建组件vnode时，不会构建组件级别的vnode；直接是通过render函数构建元素级别的vnode(这也是得益于双方的约定，设置了functional函数式组件，里面就不能再是其它组件，只能是原生元素)
+      // 创建原生时，也就没有componentVNodeHooks.init调用createComponentInstanceForVnode调用组件构造函数，构建组件实例;
+      // 因此也就不会调用_init去初始化组件相关的state状态等流程，所以性能会更好
       return createFunctionalComponent(Ctor, propsData, data, context, children)
     }
 
@@ -5444,7 +5476,7 @@
 
     var vnodeComponentOptions = parentVnode.componentOptions;
     // 拿到父vnode虚拟节点上的propsData，赋值给当前组件实例 vm.$options.propsData(initState时，initProps初始化props时会用到这些父级属性)
-    // 父vnode虚拟节点上的propsData 执行render函数构建虚拟dom时，通过attrs属性获取的
+    // 父vnode虚拟节点上的propsData 执行render函数构建虚拟dom时，通过attrs属性获取的;并通过构造函数初始化给了vnode.componentOptions.propsData
     opts.propsData = vnodeComponentOptions.propsData;
 
     // 父vnode上的listeners，赋值给vm.$options._parentListeners，在组件初始化_init中会调用eventsMixin，把这些事件注册到vm._events上面
@@ -5560,6 +5592,8 @@
       extendOptions = extendOptions || {};
       var Super = this;
       var SuperId = Super.cid;
+
+      // 组件构造options上定义一个_Ctor对象，用来缓存该组件的构造函数
       var cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {});
       if (cachedCtors[SuperId]) {
         return cachedCtors[SuperId]
@@ -5574,7 +5608,7 @@
       var Sub = function VueComponent (options) {
         this._init(options);
       };
-      // 子构造函数原型链指向父类的prototype
+      // 子构造函数原型链指向父类的prototype; vue子类就可以使用vue.prototype原型链上定义的所有方法
       Sub.prototype = Object.create(Super.prototype);
       // 构造函数指回自己
       Sub.prototype.constructor = Sub;
@@ -5598,6 +5632,7 @@
         initComputed$2(Sub);
       }
 
+      // 全局方法依次赋值
       // allow further extension/mixin/plugin usage
       Sub.extend = Super.extend;
       Sub.mixin = Super.mixin;
@@ -5605,6 +5640,7 @@
 
       // create asset registers, so extended classes
       // can have their private assets too.
+      // ASSET_TYPES = ['component','directive','filter']
       ASSET_TYPES.forEach(function (type) {
         Sub[type] = Super[type];
       });
@@ -5648,6 +5684,7 @@
     /**
      * Create asset registration methods.
      */
+    // ASSET_TYPES = ['component','directive','filter']
     ASSET_TYPES.forEach(function (type) {
       Vue[type] = function (
         id,
@@ -5665,6 +5702,7 @@
             definition.name = definition.name || id;
             definition = this.options._base.extend(definition);
           }
+          // Vue.directive 指令的实现
           if (type === 'directive' && typeof definition === 'function') {
             definition = { bind: definition, update: definition };
           }
