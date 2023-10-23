@@ -231,7 +231,9 @@ function genConfig (name) {
       file: opts.dest,
       format: opts.format,
       banner: opts.banner,
-      name: opts.moduleName || 'Vue'
+      name: opts.moduleName || 'Vue',
+      // 开启sourcemap文件生成
+      sourcemap:'inline-sourcemap'
     },
     onwarn: (msg, warn) => {
       if (!/Circular/.test(msg)) {
