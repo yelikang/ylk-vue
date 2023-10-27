@@ -88,6 +88,7 @@ export function initInternalComponent (vm: Component, options: InternalComponent
   const vnodeComponentOptions = parentVnode.componentOptions
   // 拿到父vnode虚拟节点上的propsData，赋值给当前组件实例 vm.$options.propsData(initState时，initProps初始化props时会用到这些父级属性)
   // 父vnode虚拟节点上的propsData 执行render函数构建虚拟dom时，通过attrs属性获取的;并通过构造函数初始化给了vnode.componentOptions.propsData
+  // parentVnode.componentOptions中的propsData 在create-component 的createComponent方法中的 extractPropsFromVNodeData 中提取
   opts.propsData = vnodeComponentOptions.propsData
 
   // 父vnode上的listeners，赋值给vm.$options._parentListeners，在组件初始化_init中会调用eventsMixin，把这些事件注册到vm._events上面

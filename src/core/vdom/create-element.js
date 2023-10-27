@@ -87,6 +87,7 @@ export function _createElement (
     data.scopedSlots = { default: children[0] }
     children.length = 0
   }
+  // children数据为任意类型，需要规范为vNode类型
   if (normalizationType === ALWAYS_NORMALIZE) {
     children = normalizeChildren(children)
   } else if (normalizationType === SIMPLE_NORMALIZE) {
@@ -96,16 +97,17 @@ export function _createElement (
   if (typeof tag === 'string') {
     let Ctor
     ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag)
+    // 是否平台保留标签，可以区分不同平台的保留元素
     if (config.isReservedTag(tag)) {
-      // platform built-in elements
+      // platform built-in elements 构建平台元素
       vnode = new VNode(
         config.parsePlatformTagName(tag), data, children,
         undefined, undefined, context
       )
     } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
       // isDef 判断组件是否声明在局部、全局中，如果声明了就代表这是个组件，否则创建一个未知的vnode；__patch创建真实节点的时候会校验这个vnode
-      // component
       // 判断当前要构建的vnode是不是组件vnode
+      // component
       vnode = createComponent(Ctor, data, context, children, tag)
     } else {
       // unknown or unlisted namespaced elements

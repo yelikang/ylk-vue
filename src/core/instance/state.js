@@ -78,6 +78,7 @@ function initProps (vm: Component, propsOptions: Object) {
   if (!isRoot) {
     toggleObserving(false)
   }
+  // 循环子组件中定义的props对象属性，并从propsData中获取父组件的值，赋值给子组件的props对象
   for (const key in propsOptions) {
     keys.push(key)
     const value = validateProp(key, propsOptions, propsData, vm)
@@ -294,8 +295,8 @@ function createComputedGetter (key) {
         // this.value = this.get()  调用compute key对应的getter函数
         // this.dirty = false
 
-        // this.get中会把当前计算 watcher pushTarget，再去调用这里的getter时，
-        // 如果读取到其它属性，其它属性的消息中心dep会进行依赖收集(dep.depend),收集当前的computed watcher
+        // watcher.evaluate中调用this.get中会把当前计算 watcher pushTarget，当get中依赖其它属性，再去调用其它属性的getter时，
+        // 其它属性的消息中心dep会进行依赖收集(dep.depend),收集当前的computed watcher
         // 当相关的其它属性变更时，便通知computed watcher去update(这里主要是将dirty 设置为true)
         // 页面再次调用computed 属性时，发现dirty又变为true,就会再次执行evaluate去执行getter的内容
         watcher.evaluate()

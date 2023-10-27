@@ -83,7 +83,7 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
 
 export function nextTick (cb?: Function, ctx?: Object) {
   let _resolve
-  // push一个匿名的回调函数，会掉函数内使用try.catch去执行回调;保证即使回调出错也不至于程序奔溃
+  // push一个匿名的回调函数，回掉函数内使用try.catch去执行回调;保证即使回调出错也不至于程序奔溃
   callbacks.push(() => {
     if (cb) {
       try {
@@ -101,6 +101,7 @@ export function nextTick (cb?: Function, ctx?: Object) {
   }
   // $flow-disable-line
   if (!cb && typeof Promise !== 'undefined') {
+    // 处理 this.$nextTick().then使用场景；callback中还是会入栈一个匿名函数，只是cb为undefined，但是_resolve会被复制，并最终执行_resolve(ctx)
     return new Promise(resolve => {
       _resolve = resolve
     })

@@ -20,6 +20,7 @@ import platformDirectives from './directives/index'
 import platformComponents from './components/index'
 
 // install platform specific utils
+// 处理各个平台的特定方法（在initGlobalAPI时，定义Vue.config指向了core/config对象，这里改变同步改变core/config对象的指向）
 Vue.config.mustUseProp = mustUseProp
 Vue.config.isReservedTag = isReservedTag
 Vue.config.isReservedAttr = isReservedAttr

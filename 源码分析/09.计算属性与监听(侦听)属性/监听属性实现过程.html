@@ -13,7 +13,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>computed计算属性实现过程</title>
+    <title>watch监听属性实现过程</title>
   </head>
   <body>
     <div id="app">
@@ -63,7 +63,7 @@
         // 紧接着调用Watcher的get函数，调用getter.call(vm,vm)，读取vm.user.name后，name属性的消息中心就会收集当前的user watcher了
 
         // 3.watch更新调用过程
-        // 当监听的属性更新时，同时所有的watcher去更新，当然包括这里的user watcher; 在watcher的run函数中，判断wathcer为user watcher 会调用this.cb.call 的回调函数，并传入newVal、oldVal
+        // 当监听的属性更新时，通知所有的watcher去更新，当然包括这里的user watcher; 在watcher的run函数中，判断wathcer为user watcher 会调用this.cb.call 的回调函数，并传入newVal、oldVal
 
         // 4.watch相关属性immediate、deep
         // immediate: vm.$watch时，判断immediate为true就立即执行回调函数

@@ -384,7 +384,7 @@
     /**
      * Option merge strategies (used in core/util/options)
      */
-    // $flow-disable-line
+    // $flow-disable-line 选项合并策略
     optionMergeStrategies: Object.create(null),
 
     /**
@@ -621,7 +621,7 @@
     /**
      * Option merge strategies (used in core/util/options)
      */
-    // $flow-disable-line
+    // $flow-disable-line 选项合并策略
     optionMergeStrategies: Object.create(null),
 
     /**
@@ -1172,7 +1172,7 @@
 
   function nextTick (cb, ctx) {
     var _resolve;
-    // push一个匿名的回调函数，会掉函数内使用try.catch去执行回调;保证即使回调出错也不至于程序奔溃
+    // push一个匿名的回调函数，回掉函数内使用try.catch去执行回调;保证即使回调出错也不至于程序奔溃
     callbacks.push(function () {
       if (cb) {
         try {
@@ -1190,6 +1190,7 @@
     }
     // $flow-disable-line
     if (!cb && typeof Promise !== 'undefined') {
+      // 处理 this.$nextTick().then使用场景；callback中还是会入栈一个匿名函数，只是cb为undefined，但是_resolve会被复制，并最终执行_resolve(ctx)
       return new Promise(function (resolve) {
         _resolve = resolve;
       })
@@ -1577,6 +1578,10 @@
 
             // 这的Dep.target实际上还是父级同一个Watcher ??? 是
             // 主要用于Vue.set给对象添加新的属性时，能够通过value上的__ob__上的dep，去通知渲染watcher去更新
+
+            // dep.depend()通过Dep直接收集依赖，适用于数据结构刚开始就定义好了，组件获取/使用时通过Dep对象直接通知
+            // 而childOb.dep.depend实际上是通过Observer对象中的Dep进行收集，适用于Vue.$set等api直接操作data对象时，通过 __ob__ 上的Dep进行消息通知
+            // 两者收集的是同一个Watcher对象；只是为了处理更多的更新通知场景
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray(value);
@@ -1680,6 +1685,7 @@
   /**
    * Collect dependencies on array elements when the array is touched, since
    * we cannot intercept array element access like property getters.
+   * 当数组被触摸时，收集对数组元素的依赖，因为我们不能像属性getter那样拦截数组元素的访问
    */
   function dependArray (value) {
     for (var e = (void 0), i = 0, l = value.length; i < l; i++) {
@@ -1766,7 +1772,7 @@
       // merged result of both functions... no need to
       // check if parentVal is a function here because
       // it has to be a function to pass previous merges.
-      // 组件initState，调用initData是会调用合并
+      // 组件initState，调用initData时会调用合并
       return function mergedDataFn () {
         return mergeData(
           typeof childVal === 'function' ? childVal.call(this, this) : childVal,
@@ -2581,8 +2587,9 @@
   // thing with Array.prototype.concat. It is guaranteed to be only 1-level deep
   // because functional components already normalize their own children.
 
-  // 拍平二位宿主，数组的concat方法当concat的元素是单个对象时会直接加入数组；如果concat的对象是数组，会拍平加入到数组
+  // 拍平二维宿主，数组的concat方法当concat的元素是单个对象时会直接加入数组；如果concat的对象是数组，会拍平加入到数组
   // 并返回新的数组
+  // apply(obj, [1,2,3])
   function simpleNormalizeChildren (children) {
     for (var i = 0; i < children.length; i++) {
       if (Array.isArray(children[i])) {
@@ -2694,6 +2701,7 @@
     }
 
     if (isDef(factory.resolved)) {
+      // 强制更新之后，会获取这里的factory.resolved进行渲染
       return factory.resolved
     }
     
@@ -2704,6 +2712,7 @@
 
     if (isDef(factory.contexts)) {
       // already pending
+      // 异步组件加载中，多个地方调用同一个异步组件函数，那加载只进行一次；存储上级组件vm实例；加载完之后强制更新所有上级组件vm实例
       factory.contexts.push(context);
     } else {
       var contexts = factory.contexts = [context];
@@ -2711,6 +2720,7 @@
 
       var forceRender = function (renderCompleted) {
         for (var i = 0, l = contexts.length; i < l; i++) {
+          // 实际上是调用异步组件的上级组件实例vm进行强制更新；而不是异步组件本身
           contexts[i].$forceUpdate();
         }
 
@@ -3076,10 +3086,10 @@
       // Vue.prototype.__patch__ is injected in entry points
       // based on the rendering backend used.
       if (!prevVnode) {
-        // initial render
+        // initial render（初始化渲染的patch）
         vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */);
       } else {
-        // updates
+        // updates（更新时的patch）
         vm.$el = vm.__patch__(prevVnode, vnode);
       }
       restoreActiveInstance();
@@ -3423,6 +3433,7 @@
       }
       // queue the flush
       if (!waiting) {
+        // 每个轮回只执行一次nextTick，flushSchedulerQueue执行完之后，调用resetSchedulerState恢复waiting为false
         waiting = true;
 
         if (!config$1.async) {
@@ -3579,6 +3590,7 @@
     tmp = this.deps;
     this.deps = this.newDeps;
     this.newDeps = tmp;
+    // newDepIds、newDeps每次渲染完都会情况，在执行_render时，从新收集新的Dep；并与旧的Dep进行对比，从旧的中移除没有使用的Dep
     this.newDeps.length = 0;
   };
 
@@ -3723,6 +3735,7 @@
     if (!isRoot) {
       toggleObserving(false);
     }
+    // 循环子组件中定义的props对象属性，并从propsData中获取父组件的值，赋值给子组件的props对象
     var loop = function ( key ) {
       keys.push(key);
       var value = validateProp(key, propsOptions, propsData, vm);
@@ -3938,8 +3951,8 @@
           // this.value = this.get()  调用compute key对应的getter函数
           // this.dirty = false
 
-          // this.get中会把当前计算 watcher pushTarget，再去调用这里的getter时，
-          // 如果读取到其它属性，其它属性的消息中心dep会进行依赖收集(dep.depend),收集当前的computed watcher
+          // watcher.evaluate中调用this.get中会把当前计算 watcher pushTarget，当get中依赖其它属性，再去调用其它属性的getter时，
+          // 其它属性的消息中心dep会进行依赖收集(dep.depend),收集当前的computed watcher
           // 当相关的其它属性变更时，便通知computed watcher去update(这里主要是将dirty 设置为true)
           // 页面再次调用computed 属性时，发现dirty又变为true,就会再次执行evaluate去执行getter的内容
           watcher.evaluate();
@@ -4937,6 +4950,7 @@
       var componentInstance = vnode.componentInstance;
       if (!componentInstance._isMounted) {
         componentInstance._isMounted = true;
+        // 内部组件的mounted钩子函数在这里执行，外部 new Vue会在lifecycle中执行
         callHook(componentInstance, 'mounted');
       }
       if (vnode.data.keepAlive) {
@@ -5014,7 +5028,7 @@
         // return a placeholder node for async component, which is rendered
         // as a comment node but preserves all the raw information for the node.
         // the information will be used for async server-rendering and hydration.
-        // 先渲染一个注释节点
+        // 如果异步组件一直没有返回，异步组件返回后会通过上级组件实例vm进行强制更新渲染；这里先渲染一个注释节点；
         return createAsyncPlaceholder(
           asyncFactory,
           data,
@@ -5219,6 +5233,7 @@
       data.scopedSlots = { default: children[0] };
       children.length = 0;
     }
+    // children数据为任意类型，需要规范为vNode类型
     if (normalizationType === ALWAYS_NORMALIZE) {
       children = normalizeChildren(children);
     } else if (normalizationType === SIMPLE_NORMALIZE) {
@@ -5228,16 +5243,17 @@
     if (typeof tag === 'string') {
       var Ctor;
       ns = (context.$vnode && context.$vnode.ns) || config$1.getTagNamespace(tag);
+      // 是否平台保留标签，可以区分不同平台的保留元素
       if (config$1.isReservedTag(tag)) {
-        // platform built-in elements
+        // platform built-in elements 构建平台元素
         vnode = new VNode(
           config$1.parsePlatformTagName(tag), data, children,
           undefined, undefined, context
         );
       } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
         // isDef 判断组件是否声明在局部、全局中，如果声明了就代表这是个组件，否则创建一个未知的vnode；__patch创建真实节点的时候会校验这个vnode
-        // component
         // 判断当前要构建的vnode是不是组件vnode
+        // component
         vnode = createComponent$1(Ctor, data, context, children, tag);
       } else {
         // unknown or unlisted namespaced elements
@@ -5477,6 +5493,7 @@
     var vnodeComponentOptions = parentVnode.componentOptions;
     // 拿到父vnode虚拟节点上的propsData，赋值给当前组件实例 vm.$options.propsData(initState时，initProps初始化props时会用到这些父级属性)
     // 父vnode虚拟节点上的propsData 执行render函数构建虚拟dom时，通过attrs属性获取的;并通过构造函数初始化给了vnode.componentOptions.propsData
+    // parentVnode.componentOptions中的propsData 在create-component 的createComponent方法中的 extractPropsFromVNodeData 中提取
     opts.propsData = vnodeComponentOptions.propsData;
 
     // 父vnode上的listeners，赋值给vm.$options._parentListeners，在组件初始化_init中会调用eventsMixin，把这些事件注册到vm._events上面
@@ -6021,6 +6038,10 @@
 
             // 这的Dep.target实际上还是父级同一个Watcher ??? 是
             // 主要用于Vue.set给对象添加新的属性时，能够通过value上的__ob__上的dep，去通知渲染watcher去更新
+
+            // dep.depend()通过Dep直接收集依赖，适用于数据结构刚开始就定义好了，组件获取/使用时通过Dep对象直接通知
+            // 而childOb.dep.depend实际上是通过Observer对象中的Dep进行收集，适用于Vue.$set等api直接操作data对象时，通过 __ob__ 上的Dep进行消息通知
+            // 两者收集的是同一个Watcher对象；只是为了处理更多的更新通知场景
             childOb.dep.depend();
             if (Array.isArray(value)) {
               dependArray$1(value);
@@ -6058,6 +6079,7 @@
   /**
    * Collect dependencies on array elements when the array is touched, since
    * we cannot intercept array element access like property getters.
+   * 当数组被触摸时，收集对数组元素的依赖，因为我们不能像属性getter那样拦截数组元素的访问
    */
   function dependArray$1 (value) {
     for (var e = (void 0), i = 0, l = value.length; i < l; i++) {
@@ -7217,6 +7239,7 @@
 
       // 全量更新节点的所有属性(不管有没有变更，vue3.0在这里做了大量的优化，引入了block的概念)
       if (isDef(data) && isPatchable(vnode)) {
+        // 执行cbs上的update方法集合（cbs上面有 ['create', 'activate', 'update', 'remove', 'destroy']）
         // 更新data上的属性，attrs、class、listeners、props、style等
         for (i = 0; i < cbs.update.length; ++i) { cbs.update[i](oldVnode, vnode); }
         if (isDef(i = data.hook) && isDef(i = i.update)) { i(oldVnode, vnode); }
@@ -7488,6 +7511,7 @@
         }
       }
 
+      // 执行内部组件的insert钩子函数
       invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch);
       return vnode.elm
     }
@@ -9694,6 +9718,7 @@
   /*  */
 
   // install platform specific utils
+  // 处理各个平台的特定方法（在initGlobalAPI时，定义Vue.config指向了core/config对象，这里改变同步改变core/config对象的指向）
   Vue.config.mustUseProp = mustUseProp;
   Vue.config.isReservedTag = isReservedTag;
   Vue.config.isReservedAttr = isReservedAttr;
@@ -13417,3 +13442,4 @@
   return Vue;
 
 }));
+//# sourceMappingURL=vue.js.map

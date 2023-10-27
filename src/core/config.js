@@ -39,7 +39,7 @@ export default ({
   /**
    * Option merge strategies (used in core/util/options)
    */
-  // $flow-disable-line
+  // $flow-disable-line 选项合并策略
   optionMergeStrategies: Object.create(null),
 
   /**

@@ -49,6 +49,7 @@ export function resolveAsyncComponent (
   }
 
   if (isDef(factory.resolved)) {
+    // 强制更新之后，会获取这里的factory.resolved进行渲染
     return factory.resolved
   }
   
@@ -59,6 +60,7 @@ export function resolveAsyncComponent (
 
   if (isDef(factory.contexts)) {
     // already pending
+    // 异步组件加载中，多个地方调用同一个异步组件函数，那加载只进行一次；存储上级组件vm实例；加载完之后强制更新所有上级组件vm实例
     factory.contexts.push(context)
   } else {
     const contexts = factory.contexts = [context]
@@ -66,6 +68,7 @@ export function resolveAsyncComponent (
 
     const forceRender = (renderCompleted: boolean) => {
       for (let i = 0, l = contexts.length; i < l; i++) {
+        // 实际上是调用异步组件的上级组件实例vm进行强制更新；而不是异步组件本身
         contexts[i].$forceUpdate()
       }
 

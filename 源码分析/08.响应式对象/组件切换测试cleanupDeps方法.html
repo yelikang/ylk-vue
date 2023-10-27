@@ -49,6 +49,9 @@
         },
         change(){
           this.msg = '小红' + new Date().getTime();
+          this.$nextTick().then(res=>{
+            console.log(6)
+          })
         }
       },
       watch:{

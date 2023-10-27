@@ -178,6 +178,7 @@ export default class Watcher {
     tmp = this.deps
     this.deps = this.newDeps
     this.newDeps = tmp
+    // newDepIds、newDeps每次渲染完都会情况，在执行_render时，从新收集新的Dep；并与旧的Dep进行对比，从旧的中移除没有使用的Dep
     this.newDeps.length = 0
   }
 

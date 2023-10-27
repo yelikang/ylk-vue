@@ -37,6 +37,8 @@ export function toggleObserving (value: boolean) {
 export class Observer {
   value: any;
   dep: Dep;
+  // 这个Observer实例当前被多少个Vue实例引用,也就是多少个Vue实例依赖于这个Observer实例收集的依赖
+  // 以用来判断一个Observer实例当前被多少个Vue实例共享,从而决定什么时候可以删除这个Observer实例以释放内存
   vmCount: number; // number of vms that have this object as root $data
 
   constructor (value: any) {
@@ -196,6 +198,10 @@ export function defineReactive (
 
           // 这的Dep.target实际上还是父级同一个Watcher ??? 是
           // 主要用于Vue.set给对象添加新的属性时，能够通过value上的__ob__上的dep，去通知渲染watcher去更新
+
+          // dep.depend()通过Dep直接收集依赖，适用于数据结构刚开始就定义好了，组件获取/使用时通过Dep对象直接通知
+          // 而childOb.dep.depend实际上是通过Observer对象中的Dep进行收集，适用于Vue.$set等api直接操作data对象时，通过 __ob__ 上的Dep进行消息通知
+          // 两者收集的是同一个Watcher对象；只是为了处理更多的更新通知场景
           childOb.dep.depend()
           if (Array.isArray(value)) {
             dependArray(value)
@@ -301,6 +307,7 @@ export function del (target: Array<any> | Object, key: any) {
 /**
  * Collect dependencies on array elements when the array is touched, since
  * we cannot intercept array element access like property getters.
+ * 当数组被触摸时，收集对数组元素的依赖，因为我们不能像属性getter那样拦截数组元素的访问
  */
 function dependArray (value: Array<any>) {
   for (let e, i = 0, l = value.length; i < l; i++) {

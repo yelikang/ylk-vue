@@ -600,6 +600,7 @@ export function createPatchFunction (backend) {
 
     // 全量更新节点的所有属性(不管有没有变更，vue3.0在这里做了大量的优化，引入了block的概念)
     if (isDef(data) && isPatchable(vnode)) {
+      // 执行cbs上的update方法集合（cbs上面有 ['create', 'activate', 'update', 'remove', 'destroy']）
       // 更新data上的属性，attrs、class、listeners、props、style等
       for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
       if (isDef(i = data.hook) && isDef(i = i.update)) i(oldVnode, vnode)
@@ -871,6 +872,7 @@ export function createPatchFunction (backend) {
       }
     }
 
+    // 执行内部组件的insert钩子函数
     invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch)
     return vnode.elm
   }

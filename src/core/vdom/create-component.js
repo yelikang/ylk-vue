@@ -73,6 +73,7 @@ const componentVNodeHooks = {
     const { context, componentInstance } = vnode
     if (!componentInstance._isMounted) {
       componentInstance._isMounted = true
+      // 内部组件的mounted钩子函数在这里执行，外部 new Vue会在lifecycle中执行
       callHook(componentInstance, 'mounted')
     }
     if (vnode.data.keepAlive) {
@@ -150,7 +151,7 @@ export function createComponent (
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
-      // 先渲染一个注释节点
+      // 如果异步组件一直没有返回，异步组件返回后会通过上级组件实例vm进行强制更新渲染；这里先渲染一个注释节点；
       return createAsyncPlaceholder(
         asyncFactory,
         data,

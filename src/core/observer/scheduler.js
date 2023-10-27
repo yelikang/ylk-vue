@@ -164,6 +164,7 @@ export function queueWatcher (watcher: Watcher) {
     }
     // queue the flush
     if (!waiting) {
+      // 每个轮回只执行一次nextTick，flushSchedulerQueue执行完之后，调用resetSchedulerState恢复waiting为false
       waiting = true
 
       if (process.env.NODE_ENV !== 'production' && !config.async) {
