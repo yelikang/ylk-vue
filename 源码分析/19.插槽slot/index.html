@@ -1,0 +1,47 @@
+<!--
+ * @Description: 
+ * @Autor: lizi
+ * @Date: 2022-04-26 14:38:45
+ * @LastEditors: lizi
+ * @LastEditTime: 2022-05-13 17:47:22
+ * @FilePath: \ylk-vue\源码分析\00.diff算法\index.html
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>17.组件更新patch算法,diff算法</title>
+  </head>
+  <body>
+    <div id="app">
+      <children>
+        <div slot="main">替换插槽内容</div>
+        <h1>123</h1>
+        </children>
+    </div>
+  </body>
+  <script src="../../dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: "#app",
+      data() {
+        return {
+          test: "123",
+        };
+      },
+      components:{
+        children:{
+          template:`<div><slot name="main">默认内容</slot>123</div>`,
+          data(){
+            return {
+              name:'123'
+            }
+          }
+        }
+      }
+    });
+  </script>
+</html>

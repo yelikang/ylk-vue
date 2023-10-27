@@ -81,6 +81,7 @@ export default {
   },
 
   render () {
+    // 获取默认插槽，并获取默认插槽的第一个子节点（所以keep-alive只会处理第一个子元素）
     const slot = this.$slots.default
     const vnode: VNode = getFirstComponentChild(slot)
     const componentOptions: ?VNodeComponentOptions = vnode && vnode.componentOptions

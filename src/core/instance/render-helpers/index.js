@@ -11,6 +11,7 @@ import { renderStatic, markOnce } from './render-static'
 import { bindObjectListeners } from './bind-object-listeners'
 import { resolveScopedSlots } from './resolve-slots'
 
+// 实例辅助方法缩写
 export function installRenderHelpers (target: any) {
   target._o = markOnce
   target._n = toNumber

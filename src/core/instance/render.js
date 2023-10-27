@@ -22,6 +22,9 @@ export function initRender (vm: Component) {
   const options = vm.$options
   const parentVnode = vm.$vnode = options._parentVnode // the placeholder node in parent tree
   const renderContext = parentVnode && parentVnode.context
+  // _renderChildren为组件实际渲染时的子vnode，例如<children>123</children> _renderChildren就为[123]
+  // 代表的是实例子vnode，与children构造函数本身template/render产生的vnode区分开，主要是做slot插槽渲染用
+  // children构造函数本身的子vnode在render时是不会创建的，即不会有childrens；只会在组件patch时通过createComponent调用i.init中的createComponentInstanceForVnode 创建
   vm.$slots = resolveSlots(options._renderChildren, renderContext)
   vm.$scopedSlots = emptyObject
   // bind the createElement fn to this instance
