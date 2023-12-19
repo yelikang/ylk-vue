@@ -16,12 +16,16 @@ import { isFalse, isTrue, isDef, isUndef, isPrimitive } from 'shared/util'
 // thing with Array.prototype.concat. It is guaranteed to be only 1-level deep
 // because functional components already normalize their own children.
 
-// 拍平二维宿主，数组的concat方法当concat的元素是单个对象时会直接加入数组；如果concat的对象是数组，会拍平加入到数组
+// 拍平二维数组，数组的concat方法当concat的元素是单个对象时会直接加入数组；如果concat的对象是数组，会拍平加入到数组
 // 并返回新的数组
 // apply(obj, [1,2,3])
 export function simpleNormalizeChildren (children: any) {
   for (let i = 0; i < children.length; i++) {
     if (Array.isArray(children[i])) {
+      // 只要数组中有一个元素页为数组，就把数组的每一项作为concat的入参(apply的入参为数组)
+      // 那么在concat的时候就变成 [].concat(child1, child2, child3......)；也就把children中所有内容都铺平
+      // 主要也是因为concat参数为对象会被加入数组、参数为一维数组，也会合并进数组
+      // 但这里是浅层的打平；[1,[[2]], [3]]这种就打平不了
       return Array.prototype.concat.apply([], children)
     }
   }
