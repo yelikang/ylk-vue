@@ -540,6 +540,7 @@ export function addIfCondition (el: ASTElement, condition: ASTIfCondition) {
 }
 
 function processOnce (el) {
+  // 元素是否包含v-once属性，包含就代码元素只渲染一次
   const once = getAndRemoveAttr(el, 'v-once')
   if (once != null) {
     el.once = true
