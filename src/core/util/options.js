@@ -479,7 +479,7 @@ export function resolveAsset (
   const PascalCaseId = capitalize(camelizedId)
   if (hasOwn(assets, PascalCaseId)) return assets[PascalCaseId]
   // fallback to prototype chain
-  // 局部组件中寻找不到，就通过原型链进行全局Vue上的寻找
+  // 局部组件中寻找不到，会通过原型链进行全局Vue上的寻找;
   const res = assets[id] || assets[camelizedId] || assets[PascalCaseId]
   if (process.env.NODE_ENV !== 'production' && warnMissing && !res) {
     warn(

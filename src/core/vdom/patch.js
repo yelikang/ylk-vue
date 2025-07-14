@@ -471,12 +471,12 @@ export function createPatchFunction (backend) {
         oldEndVnode = oldCh[--oldEndIdx]
         newStartVnode = newCh[++newStartIdx]
       } else {
-        // 走到这里，则说明猜想没有命中，没办法只能遍历两个数组，找出相同节点 (例如[1,2,3,4]变成[3,1,4,2])
+        // 走到这里，则说明猜想没有命中，没办法只能遍历两个数组(先通过key寻找，找不到就循环)，找出相同节点 (例如[1,2,3,4]变成[3,1,4,2])
 
         // 生成老节点的map对象；以节点的key为键，节点的下标为value，{key: idex}，例如:{goods_id_1 : 1, goods_id_2: 2}
         if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
         // 从老节点的 map 对象中，根据新节点的 key 找到新开始节点在老节点数组中对应的下标
-        // 所以这是key，可以直接通过下标key拿到节点；而不是通过循环获取
+        // 所以这是key，可以直接通过下标key拿到节点；找不到就findIdxInOld循环获取
         idxInOld = isDef(newStartVnode.key)
           ? oldKeyToIdx[newStartVnode.key]
           : findIdxInOld(newStartVnode, oldCh, oldStartIdx, oldEndIdx)

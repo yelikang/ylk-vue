@@ -1,6 +1,6 @@
 /*!
  * Vue.js v2.5.21
- * (c) 2014-2023 Evan You
+ * (c) 2014-2025 Evan You
  * Released under the MIT License.
  */
 (function (global, factory) {
@@ -2157,7 +2157,7 @@
     var PascalCaseId = capitalize(camelizedId);
     if (hasOwn(assets, PascalCaseId)) { return assets[PascalCaseId] }
     // fallback to prototype chain
-    // 局部组件中寻找不到，就通过原型链进行全局Vue上的寻找
+    // 局部组件中寻找不到，会通过原型链进行全局Vue上的寻找;
     var res = assets[id] || assets[camelizedId] || assets[PascalCaseId];
     if (warnMissing && !res) {
       warn(
@@ -2587,12 +2587,16 @@
   // thing with Array.prototype.concat. It is guaranteed to be only 1-level deep
   // because functional components already normalize their own children.
 
-  // 拍平二维宿主，数组的concat方法当concat的元素是单个对象时会直接加入数组；如果concat的对象是数组，会拍平加入到数组
+  // 拍平二维数组，数组的concat方法当concat的元素是单个对象时会直接加入数组；如果concat的对象是数组，会拍平加入到数组
   // 并返回新的数组
   // apply(obj, [1,2,3])
   function simpleNormalizeChildren (children) {
     for (var i = 0; i < children.length; i++) {
       if (Array.isArray(children[i])) {
+        // 只要数组中有一个元素页为数组，就把数组的每一项作为concat的入参(apply的入参为数组)
+        // 那么在concat的时候就变成 [].concat(child1, child2, child3......)；也就把children中所有内容都铺平
+        // 主要也是因为concat参数为对象会被加入数组、参数为一维数组，也会合并进数组
+        // 但这里是浅层的打平；[1,[[2]], [3]]这种就打平不了
         return Array.prototype.concat.apply([], children)
       }
     }
@@ -4509,6 +4513,7 @@
 
   /*  */
 
+  // 实例辅助方法缩写
   function installRenderHelpers (target) {
     target._o = markOnce;
     target._n = toNumber;
@@ -4522,6 +4527,7 @@
     target._k = checkKeyCodes;
     target._b = bindObjectProps;
     target._v = createTextVNode$1;
+    // 创建空节点
     target._e = createEmptyVNode$1;
     target._u = resolveScopedSlots;
     target._g = bindObjectListeners;
@@ -4918,6 +4924,7 @@
         vnode.data.keepAlive
       ) {
         // kept-alive components, treat as a patch
+        // 处理keep-alive缓存组件
         var mountedNode = vnode; // work around flow
         componentVNodeHooks$1.prepatch(mountedNode, mountedNode);
       } else {
@@ -5253,6 +5260,7 @@
       } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
         // isDef 判断组件是否声明在局部、全局中，如果声明了就代表这是个组件，否则创建一个未知的vnode；__patch创建真实节点的时候会校验这个vnode
         // 判断当前要构建的vnode是不是组件vnode
+        // 可以通过this.$options.components[xxx] 动态声明组件
         // component
         vnode = createComponent$1(Ctor, data, context, children, tag);
       } else {
@@ -5317,6 +5325,9 @@
     var options = vm.$options;
     var parentVnode = vm.$vnode = options._parentVnode; // the placeholder node in parent tree
     var renderContext = parentVnode && parentVnode.context;
+    // _renderChildren为组件实际渲染时的子vnode，例如<children>123</children> _renderChildren就为[123]
+    // 代表的是实例子vnode，与children构造函数本身template/render产生的vnode区分开，主要是做slot插槽渲染用
+    // children构造函数本身的子vnode在render时是不会创建的，即不会有childrens；只会在组件patch时通过createComponent调用i.init中的createComponentInstanceForVnode 创建
     vm.$slots = resolveSlots(options._renderChildren, renderContext);
     vm.$scopedSlots = emptyObject;
     // bind the createElement fn to this instance
@@ -5347,6 +5358,7 @@
 
   function renderMixin$1 (Vue) {
     // install runtime convenience helpers
+    // 安装运行时的辅助函数
     installRenderHelpers(Vue.prototype);
 
     Vue.prototype.$nextTick = function (fn) {
@@ -5816,6 +5828,7 @@
     },
 
     render: function render () {
+      // 获取默认插槽，并获取默认插槽的第一个子节点（所以keep-alive只会处理第一个子元素）
       var slot = this.$slots.default;
       var vnode = getFirstComponentChild(slot);
       var componentOptions = vnode && vnode.componentOptions;
@@ -7110,12 +7123,12 @@
           oldEndVnode = oldCh[--oldEndIdx];
           newStartVnode = newCh[++newStartIdx];
         } else {
-          // 走到这里，则说明猜想没有命中，没办法只能遍历两个数组，找出相同节点 (例如[1,2,3,4]变成[3,1,4,2])
+          // 走到这里，则说明猜想没有命中，没办法只能遍历两个数组(先通过key寻找，找不到就循环)，找出相同节点 (例如[1,2,3,4]变成[3,1,4,2])
 
           // 生成老节点的map对象；以节点的key为键，节点的下标为value，{key: idex}，例如:{goods_id_1 : 1, goods_id_2: 2}
           if (isUndef(oldKeyToIdx)) { oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx); }
           // 从老节点的 map 对象中，根据新节点的 key 找到新开始节点在老节点数组中对应的下标
-          // 所以这是key，可以直接通过下标key拿到节点；而不是通过循环获取
+          // 所以这是key，可以直接通过下标key拿到节点；找不到就findIdxInOld循环获取
           idxInOld = isDef(newStartVnode.key)
             ? oldKeyToIdx[newStartVnode.key]
             : findIdxInOld(newStartVnode, oldCh, oldStartIdx, oldEndIdx);
@@ -11859,6 +11872,7 @@
   }
 
   function processOnce$1 (el) {
+    // 元素是否包含v-once属性，包含就代码元素只渲染一次
     var once$$1 = getAndRemoveAttr$1(el, 'v-once');
     if (once$$1 != null) {
       el.once = true;
